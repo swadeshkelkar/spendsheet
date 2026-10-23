@@ -1,0 +1,79 @@
+/*
+ * Theme colors for Spendsheet.
+ *
+ * Every color in the app is a CSS variable defined here. Components use
+ * var(--name) and never a hex code, so light and dark mode are just two
+ * sets of values for the same names.
+ *
+ * Which set applies is decided by the data-theme attribute on <html>:
+ *   <html data-theme="light">  or  <html data-theme="dark">
+ */
+
+/* ---------- Light (also the default) ---------- */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light; /* native controls (date picker, scrollbars) go light */
+
+  /* Backgrounds */
+  --bg: #f6f7f5; /* page */
+  --surface: #ffffff; /* cards */
+  --surface-2: #eef2f0; /* subtle fills: segmented controls, bar tracks */
+  --key: #e9eeeb; /* keypad keys */
+
+  /* Lines */
+  --border: #dde3e0;
+  --border-strong: #d3dad6;
+  --divider: #e4e9e6;
+
+  /* Text */
+  --text: #16201c;
+  --text-2: #4f5a55; /* secondary text */
+  --placeholder: #7a8580;
+
+  /* Accent (teal) */
+  --accent: #0f6e5c; /* links, icons, active tab */
+  --accent-hover: #0a4f42;
+  --accent-fill: #0f6e5c; /* primary button background */
+  --on-accent: #ffffff; /* text on primary buttons */
+  --accent-tint: #e3f1ee;
+
+  /* Errors */
+  --danger: #a1260d;
+}
+
+/* ---------- Dark ---------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0f1513;
+  --surface: #18201d;
+  --surface-2: #222c28;
+  --key: #222c28;
+
+  --border: #2a3430;
+  --border-strong: #34403b;
+  --divider: #26302c;
+
+  --text: #e8eeeb;
+  --text-2: #9aa8a2;
+  --placeholder: #77847e;
+
+  /* A brighter teal reads better on a dark background. White text on it
+     would fail contrast, so primary buttons get dark text instead. */
+  --accent: #4fc3a7;
+  --accent-hover: #7ad6c0;
+  --accent-fill: #3fb59b;
+  --on-accent: #0f1513;
+  --accent-tint: #173a33;
+
+  --danger: #f28b74;
+}
+
+/* ---------- Same in both themes ---------- */
+:root {
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+
+  --radius: 14px;
+  --radius-lg: 16px;
+}
