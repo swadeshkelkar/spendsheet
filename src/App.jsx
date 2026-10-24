@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
+import AddExpense from "./pages/AddExpense.jsx";
 import History from "./pages/History.jsx";
 import Summary from "./pages/Summary.jsx";
 import Settings from "./pages/Settings.jsx";
@@ -18,6 +19,9 @@ function App() {
           <Route path="/summary" element={<Summary />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
+
+        {/* Add expense takes the whole screen, so it sits outside Layout. */}
+        <Route path="/add" element={<AddExpense />} />
 
         {/* Any other address (including "/") goes to History. */}
         <Route path="*" element={<Navigate to="/history" replace />} />

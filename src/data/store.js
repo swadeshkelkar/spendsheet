@@ -106,3 +106,19 @@ export async function getCategories() {
 export function resetSampleData() {
   localStorage.removeItem(STORAGE_KEY);
 }
+
+// Saves a new expense. `input` has: amount, categoryId, date, note.
+// The new expense is added at the end of the list, the same way a new row is
+// added at the bottom of a sheet. Screens sort before showing, so order
+// doesn't matter here.
+export async function addExpense(input) {
+  const data = loadData();
+  const expense = {
+    id: newId(),
+    ...input,
+    createdAt: new Date().toISOString(),
+  };
+  data.expenses.push(expense);
+  saveData(data);
+  return expense;
+}

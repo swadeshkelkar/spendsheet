@@ -1,0 +1,182 @@
+/* The whole screen: one column, full height on phones */
+.add {
+  max-width: 480px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 20px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Close button, title, and an empty box the same size as the close button */
+.add-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-title {
+  font-size: 17px;
+}
+
+.icon-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+a.icon-button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* The big amount */
+.amount {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 13px;
+}
+
+.amount-value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+}
+
+.amount-symbol {
+  font-size: 28px;
+  color: var(--text-2);
+}
+
+.amount-digits {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.amount-digits.empty {
+  color: var(--placeholder); /* a grey 0 until you type */
+}
+
+/* Category chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap; /* chips move to the next line when there's no room */
+  gap: 8px;
+}
+
+.chip {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* The selected chip. aria-checked is set from React, so the look and the
+   screen-reader state can never disagree. */
+.chip[aria-checked="true"] {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+.chip[aria-checked="true"] .dot {
+  background: var(--on-accent) !important; /* override the inline category color */
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Date and note */
+.fields {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  color: var(--text-2);
+}
+
+.field + .field {
+  border-top: 1px solid var(--divider);
+}
+
+.field input {
+  flex: 1;
+  height: 48px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+}
+
+.field input::placeholder {
+  color: var(--placeholder);
+}
+
+/* The keypad: a 3-column grid */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.keypad button {
+  height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: var(--key);
+  font-family: var(--font-display);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.keypad button:active {
+  filter: brightness(0.92); /* a little feedback when pressed */
+}
+
+.save {
+  width: 100%;
+  min-height: 54px;
+  font-size: 16px;
+}
+
+.save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Text that screen readers announce but that isn't shown on screen */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

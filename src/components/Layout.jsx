@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import Icon from "./Icon.jsx";
 import "./Layout.css";
 
@@ -22,12 +22,23 @@ function Layout() {
             {tab.label}
           </NavLink>
         ))}
+
+        {/* Wide screens: an "Add expense" button in the sidebar. */}
+        <Link to="/add" className="btn-primary nav-add">
+          <Icon name="plus" size={18} />
+          Add expense
+        </Link>
       </nav>
 
       <main className="shell-main">
         {/* The screen that matches the current URL is drawn here. */}
         <Outlet />
       </main>
+
+      {/* Phones: a round + button floating above the tab bar. */}
+      <Link to="/add" className="fab" aria-label="Add expense">
+        <Icon name="plus" size={26} />
+      </Link>
     </div>
   );
 }
