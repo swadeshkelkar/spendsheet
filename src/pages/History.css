@@ -1,0 +1,96 @@
+/* "Spent in October" card at the top */
+.hero {
+  background: var(--hero-bg);
+  border: 1px solid var(--hero-border);
+  color: var(--hero-text);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  justify-content: space-between; /* total on the left, count on the right */
+  align-items: flex-end;
+}
+
+.hero-label {
+  font-size: 13px;
+  color: var(--hero-text-2);
+}
+
+.hero-total {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+}
+
+/* One day: a heading row, then a card with that day's expenses */
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.day-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.day-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* One expense row */
+.expense {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 16px;
+}
+
+/* A line between rows, but not above the first one */
+.expense + .expense {
+  border-top: 1px solid var(--divider);
+}
+
+/* The colored square with the category's first letter */
+.badge {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0; /* never squash the badge when the note is long */
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.expense-text {
+  flex: 1; /* take all the space between the badge and the amount */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.expense-note {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis; /* long notes end with "…" instead of wrapping */
+  white-space: nowrap;
+}
+
+.expense-category {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.expense-amount {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}

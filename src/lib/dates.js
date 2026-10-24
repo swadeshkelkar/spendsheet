@@ -32,3 +32,31 @@ export function addDays(iso, days) {
   date.setDate(date.getDate() + days); // handles month and year boundaries for us
   return toISODate(date);
 }
+
+// "2026-10-24" → "2026-10" (the month an expense belongs to)
+export function monthKey(iso) {
+  return iso.slice(0, 7);
+}
+
+// "2026-10" → "October 2026"
+export function monthLabel(key) {
+  const [year, month] = key.split("-").map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// A heading for one day in the History list:
+// "Today · 24 Oct", "Yesterday · 23 Oct", or "Wed · 21 Oct"
+export function dayLabel(iso) {
+  const date = parseISODate(iso);
+  const dayAndMonth = date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  const today = todayISO();
+
+  if (iso === today) return `Today · ${dayAndMonth}`;
+  if (iso === addDays(today, -1)) return `Yesterday · ${dayAndMonth}`;
+
+  const weekday = date.toLocaleDateString("en-IN", { weekday: "short" });
+  return `${weekday} · ${dayAndMonth}`;
+}

@@ -77,3 +77,66 @@
   --radius: 14px;
   --radius-lg: 16px;
 }
+
+/* ---------- The "spent this month" card (History) ---------- */
+:root,
+:root[data-theme="light"] {
+  --hero-bg: #16201c;
+  --hero-border: #16201c;
+  --hero-text: #ffffff;
+  --hero-text-2: #c9d3ce;
+}
+
+:root[data-theme="dark"] {
+  --hero-bg: #1f2b27;
+  --hero-border: #2e3b36;
+  --hero-text: #e8eeeb;
+  --hero-text-2: #9aa8a2;
+}
+
+/*
+ * ---------- Category colors ----------
+ * Each color has a strong shade (dots, bars, letters) and a soft tint
+ * (badge backgrounds). Categories store just the name, e.g. "teal", and
+ * screens use var(--cat-teal) and var(--cat-teal-tint), so each theme
+ * can use its own shade of the same color.
+ */
+:root,
+:root[data-theme="light"] {
+  --cat-teal: #0f6e5c;
+  --cat-teal-tint: #e3f1ee;
+  --cat-blue: #2f5da8;
+  --cat-blue-tint: #e6edf7;
+  --cat-orange: #a85a17;
+  --cat-orange-tint: #f6ebe1;
+  --cat-purple: #7a4fb0;
+  --cat-purple-tint: #efe8f7;
+  --cat-ochre: #8a6000;
+  --cat-ochre-tint: #f4eedd;
+  --cat-rose: #b4235a;
+  --cat-rose-tint: #f7e4ec;
+  --cat-cyan: #0e7490;
+  --cat-cyan-tint: #e0f1f5;
+  --cat-gray: #5f6672;
+  --cat-gray-tint: #edeef0;
+}
+
+/* Lighter shades so they stand out on the dark background. */
+:root[data-theme="dark"] {
+  --cat-teal: #4fc3a7;
+  --cat-teal-tint: #173a33;
+  --cat-blue: #7fa6e8;
+  --cat-blue-tint: #1e2b40;
+  --cat-orange: #e0965a;
+  --cat-orange-tint: #3a2a1c;
+  --cat-purple: #b08be0;
+  --cat-purple-tint: #2c2440;
+  --cat-ochre: #d6ae4e;
+  --cat-ochre-tint: #352d17;
+  --cat-rose: #e57aa0;
+  --cat-rose-tint: #3a1f2b;
+  --cat-cyan: #4fb8d0;
+  --cat-cyan-tint: #16323a;
+  --cat-gray: #a3aab5;
+  --cat-gray-tint: #262a30;
+}

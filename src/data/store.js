@@ -7,7 +7,7 @@
 // The functions are `async` because reading a Google Sheet takes time. Screens
 // already wait for them, so switching to Sheets later is a drop-in change.
 
-import { addDays, todayISO } from "../lib/dates.js";
+import { addDays, parseISODate, todayISO } from "../lib/dates.js";
 
 // The key our data is saved under in localStorage.
 const STORAGE_KEY = "spendsheet:data";
@@ -56,14 +56,23 @@ function newId() {
 // Builds a fresh set of sample data.
 function createSampleData() {
   const today = todayISO();
-  const expenses = SAMPLE_ROWS.map(([daysAgo, amount, categoryId, note]) => ({
-    id: newId(),
-    date: addDays(today, -daysAgo),
-    amount,
-    categoryId,
-    note,
-    createdAt: new Date().toISOString(),
-  }));
+  const expenses = SAMPLE_ROWS.map(
+    ([daysAgo, amount, categoryId, note], index) => {
+      const date = addDays(today, -daysAgo);
+      // Pretend each one was logged at 9:00 that day, one minute apart, so
+      // expenses on the same day always show in the same order.
+      const loggedAt =
+        parseISODate(date).getTime() + (9 * 60 + index) * 60 * 1000;
+      return {
+        id: newId(),
+        date,
+        amount,
+        categoryId,
+        note,
+        createdAt: new Date(loggedAt).toISOString(),
+      };
+    },
+  );
   return { expenses, categories: DEFAULT_CATEGORIES };
 }
 
