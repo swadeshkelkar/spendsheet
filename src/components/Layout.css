@@ -1,0 +1,92 @@
+/* ---------- Phones (the default): tab bar fixed to the bottom ---------- */
+
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 68px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* three equal columns, one per tab */
+}
+
+.nav-brand {
+  display: none; /* only shown in the desktop sidebar */
+}
+
+.nav-link {
+  display: flex;
+  flex-direction: column; /* icon above the label */
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: var(--text);
+}
+
+/* NavLink adds the "active" class to the tab for the current page. */
+.nav-link.active {
+  color: var(--accent);
+}
+
+/* Leave room at the bottom so the tab bar never covers the last item. */
+.shell-main {
+  padding-bottom: 100px;
+}
+
+/* ---------- Wide screens (900px and up): sidebar on the left ---------- */
+
+@media (min-width: 900px) {
+  .shell {
+    display: grid;
+    grid-template-columns: 240px 1fr; /* sidebar, then the screen */
+    min-height: 100vh;
+  }
+
+  .nav {
+    position: sticky; /* stays in place while the screen scrolls */
+    top: 0;
+    height: 100vh;
+    padding: 28px 16px;
+    border-top: none;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nav-brand {
+    display: block;
+    margin: 0 12px 24px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text);
+  }
+
+  .nav-link {
+    flex-direction: row; /* icon beside the label */
+    justify-content: flex-start;
+    gap: 12px;
+    height: 44px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+
+  .nav-link.active {
+    background: var(--accent-tint);
+  }
+
+  .shell-main {
+    padding-bottom: 48px;
+  }
+}

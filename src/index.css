@@ -66,3 +66,17 @@ select {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* A screen's content column: centered, never wider than 640px. */
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 28px;
+}

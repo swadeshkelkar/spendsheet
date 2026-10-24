@@ -1,24 +1,28 @@
-// Temporary preview to check the theme colors. Step 3 replaces this.
+import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import Layout from "./components/Layout.jsx";
+import History from "./pages/History.jsx";
+import Summary from "./pages/Summary.jsx";
+import Settings from "./pages/Settings.jsx";
+
+// App decides which screen to show based on the URL.
+//
+// HashRouter keeps the route after a "#", like  /spendsheet/#/history.
+// That works on GitHub Pages, which can't redirect unknown paths to index.html.
 function App() {
   return (
-    <main
-      style={{
-        maxWidth: 480,
-        margin: "0 auto",
-        padding: 24,
-        display: "grid",
-        gap: 16,
-      }}
-    >
-      <h1>Spendsheet</h1>
-      <p className='muted'>Secondary text uses --text-2.</p>
-      <div className='card'>
-        <p style={{ marginTop: 0 }}>
-          This card uses --surface and --border. <a href='#'>This is a link.</a>
-        </p>
-        <button className='btn-primary'>Save expense</button>
-      </div>
-    </main>
+    <HashRouter>
+      <Routes>
+        {/* Screens inside Layout get the tab bar around them. */}
+        <Route element={<Layout />}>
+          <Route path="/history" element={<History />} />
+          <Route path="/summary" element={<Summary />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+
+        {/* Any other address (including "/") goes to History. */}
+        <Route path="*" element={<Navigate to="/history" replace />} />
+      </Routes>
+    </HashRouter>
   );
 }
 
