@@ -1,0 +1,70 @@
+/* A titled group of settings: "Preferences", later "Your data" */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-heading {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.settings-card {
+  padding: 0; /* each .setting adds its own padding */
+}
+
+/* One setting: a title and hint, then its control */
+.setting {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setting + .setting {
+  border-top: 1px solid var(--divider);
+}
+
+.setting-title {
+  font-weight: 600;
+}
+
+.setting-hint {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+/* Segmented control: buttons side by side in a tinted track */
+.segmented {
+  display: grid;
+  grid-auto-flow: column; /* as many equal columns as there are buttons */
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.segmented button {
+  height: 40px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* The selected option looks like a raised tile. */
+.segmented button[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.settings-note {
+  font-size: 13px;
+}

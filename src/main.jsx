@@ -6,6 +6,10 @@ import "@fontsource/space-grotesk/700.css";
 import "./styles/theme.css";
 import "./index.css";
 import App from "./App.jsx";
+import { followSystemTheme } from "./lib/theme.js";
+
+// If the theme is "System", keep following the device while the app is open.
+followSystemTheme();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

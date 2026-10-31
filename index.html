@@ -7,11 +7,19 @@
     <title>Spendsheet</title>
     <script>
       // Pick the theme before the page draws, so dark mode never flashes light.
-      // For now this follows the device setting; Settings will add a manual choice.
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      document.documentElement.dataset.theme = prefersDark ? "dark" : "light";
+      // This repeats the logic in src/lib/theme.js on purpose: it has to run
+      // before the app's JavaScript has even loaded.
+      try {
+        const choice = localStorage.getItem("spendsheet:theme") || "system";
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        const dark =
+          choice === "dark" || (choice === "system" && prefersDark);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch {
+        document.documentElement.dataset.theme = "light"; // storage blocked
+      }
     </script>
   </head>
   <body>
