@@ -1,0 +1,131 @@
+/* ‹ October 2026 › */
+.month-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.month-name {
+  font-size: 16px;
+}
+
+.month-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.month-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Total spent card */
+.total-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.total-label {
+  font-size: 13px;
+}
+
+.total-value {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* Spending less than last month is good news, so it gets the accent color. */
+.change.less {
+  color: var(--accent);
+}
+
+/* The stacked bar: colored parts side by side */
+.stack {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  margin-top: 8px;
+  border-radius: 7px;
+  overflow: hidden; /* clips the parts to the rounded ends */
+}
+
+/* By category */
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.breakdown-title {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.breakdown-list {
+  padding: 4px 16px;
+}
+
+.category-row {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-row + .category-row {
+  border-top: 1px solid var(--divider);
+}
+
+.category-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.category-amount {
+  min-width: 80px;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}

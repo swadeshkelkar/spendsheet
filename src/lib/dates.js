@@ -60,3 +60,12 @@ export function dayLabel(iso) {
   const weekday = date.toLocaleDateString("en-IN", { weekday: "short" });
   return `${weekday} · ${dayAndMonth}`;
 }
+
+// Moves a month key forwards or backwards:
+// shiftMonth("2026-10", -1) → "2026-09", shiftMonth("2026-12", 1) → "2027-01"
+export function shiftMonth(key, delta) {
+  const [year, month] = key.split("-").map(Number);
+  // new Date handles overflow for us: month 13 becomes January of next year.
+  const date = new Date(year, month - 1 + delta, 1);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+}

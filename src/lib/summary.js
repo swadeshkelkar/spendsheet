@@ -40,3 +40,31 @@ export function groupByDay(expenses) {
   }
   return groups.map((group) => ({ ...group, total: total(group.items) }));
 }
+
+// Spending per category, biggest first:
+// [{ id: "food", name: "Food", color: "teal", amount: 3650, percent: 34 }, ...]
+export function byCategory(expenses, categories) {
+  const monthTotal = total(expenses);
+
+  // Add up the amounts per category ID, e.g. { food: 3650, bills: 2659 }
+  const amounts = {};
+  for (const expense of expenses) {
+    const soFar = amounts[expense.categoryId] || 0; // 0 the first time we see it
+    amounts[expense.categoryId] = soFar + expense.amount;
+  }
+
+  // Turn { food: 3650, ... } into a list with names, colors and percentages.
+  // Object.entries(amounts) gives [["food", 3910], ["bills", 4859]]
+  const rows = Object.entries(amounts).map(([categoryId, amount]) => {
+    const category = categories.find((item) => item.id === categoryId);
+    return {
+      id: categoryId,
+      name: category ? category.name : "Unknown",
+      color: category ? category.color : "gray",
+      amount,
+      percent: monthTotal > 0 ? Math.round((amount / monthTotal) * 100) : 0,
+    };
+  });
+
+  return rows.sort((a, b) => b.amount - a.amount); // biggest first
+}
