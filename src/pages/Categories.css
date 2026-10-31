@@ -1,0 +1,102 @@
+/* "‹ Settings" above the title */
+.back-link {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* The list of categories */
+.category-list {
+  padding: 0 16px;
+}
+
+.category-item {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-item + .category-item {
+  border-top: 1px solid var(--divider);
+}
+
+.category-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.category-label {
+  flex: 1; /* takes the free space, pushing Remove to the right */
+  font-weight: 600;
+}
+
+.category-locked {
+  font-size: 13px;
+}
+
+.remove-button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remove-button:hover {
+  background: var(--surface-2);
+}
+
+/* The "New category" form */
+.new-category {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.new-category-title {
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+.text-input {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.text-input::placeholder {
+  color: var(--placeholder);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+/* The chosen color gets a ring: a gap in the card color, then the text color. */
+.swatch[aria-checked="true"] {
+  box-shadow:
+    0 0 0 3px var(--surface),
+    0 0 0 5px var(--text);
+}

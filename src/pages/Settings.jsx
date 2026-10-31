@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import Icon from "../components/Icon.jsx";
 import { getSettings, updateSettings } from "../data/store.js";
 import { CURRENCIES, currencySymbol } from "../lib/money.js";
 import { getThemeChoice, setThemeChoice } from "../lib/theme.js";
@@ -100,6 +102,15 @@ function Settings() {
               ))}
             </select>
           </label>
+
+          {/* The whole row is a link to the Categories screen. */}
+          <Link to="/settings/categories" className="setting setting-row setting-link">
+            <div>
+              <div className="setting-title">Categories</div>
+              <div className="setting-hint">Add or remove spending categories</div>
+            </div>
+            <Icon name="forward" size={18} />
+          </Link>
 
           <div className="setting">
             <div>

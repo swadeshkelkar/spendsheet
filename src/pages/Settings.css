@@ -84,3 +84,14 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* A row that opens another screen */
+.setting-link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.setting-link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}

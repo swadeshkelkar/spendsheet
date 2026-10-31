@@ -67,6 +67,11 @@ select {
   cursor: pointer;
 }
 
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* A screen's content column: centered, never wider than 640px. */
 .page {
   max-width: 640px;
@@ -79,4 +84,12 @@ select {
 
 .page-title {
   font-size: 28px;
+}
+
+/* A small round color dot, e.g. a category's color */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
 import {
   addExpense,
@@ -21,6 +21,8 @@ function AddExpense() {
   const navigate = useNavigate(); // lets us change screens from code
   const { id } = useParams(); // the ":id" part of /edit/:id, or undefined on /add
   const isEditing = id !== undefined;
+  // Coming back from the Categories screen, the half-filled form is in here.
+  const draft = useLocation().state?.draft;
 
   // "loading" → "ready", or "missing" if the expense to edit doesn't exist.
   const [status, setStatus] = useState("loading");
@@ -29,10 +31,11 @@ function AddExpense() {
   // Everything the user can change on this screen lives in state.
   const [categories, setCategories] = useState([]);
   const [currency, setCurrency] = useState("INR");
-  const [amountText, setAmountText] = useState(""); // e.g. "1240.5"
-  const [categoryId, setCategoryId] = useState("food");
-  const [date, setDate] = useState(todayISO());
-  const [note, setNote] = useState("");
+  // Each starts from the draft if there is one. ?? means "if that's missing, use this".
+  const [amountText, setAmountText] = useState(draft?.amountText ?? ""); // e.g. "1240.5"
+  const [categoryId, setCategoryId] = useState(draft?.categoryId ?? "food");
+  const [date, setDate] = useState(draft?.date ?? todayISO());
+  const [note, setNote] = useState(draft?.note ?? "");
   const [saving, setSaving] = useState(false);
 
   // Load categories. When editing, also find the expense and fill in the form.
@@ -51,10 +54,14 @@ function AddExpense() {
         }
 
         // Removed categories are hidden, except the one this expense already uses.
-        setCategories(
-          categoryList.filter(
-            (category) => category.active || category.id === existing?.categoryId,
-          ),
+        const shown = categoryList.filter(
+          (category) => category.active || category.id === existing?.categoryId,
+        );
+        setCategories(shown);
+        // If the selected category isn't on screen (say Food was removed),
+        // select the first one instead.
+        setCategoryId((current) =>
+          shown.some((category) => category.id === current) ? current : shown[0].id,
         );
 
         if (existing) {
@@ -174,6 +181,19 @@ function AddExpense() {
             {category.name}
           </button>
         ))}
+
+        {/* "+ New" opens the Categories screen and takes the form along,
+            so nothing typed so far is lost. (Only when adding, not editing.) */}
+        {!isEditing && (
+          <Link
+            to="/settings/categories"
+            state={{ draft: { amountText, categoryId, date, note } }}
+            className="chip chip-new"
+          >
+            <Icon name="plus" size={16} />
+            New
+          </Link>
+        )}
       </div>
 
       <div className="fields">

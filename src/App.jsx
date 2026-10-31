@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
 import AddExpense from "./pages/AddExpense.jsx";
+import Categories from "./pages/Categories.jsx";
 import History from "./pages/History.jsx";
 import Summary from "./pages/Summary.jsx";
 import Settings from "./pages/Settings.jsx";
@@ -18,6 +19,8 @@ function App() {
           <Route path="/history" element={<History />} />
           <Route path="/summary" element={<Summary />} />
           <Route path="/settings" element={<Settings />} />
+          {/* Under /settings, so the Settings tab stays highlighted. */}
+          <Route path="/settings/categories" element={<Categories />} />
         </Route>
 
         {/* Add and edit take the whole screen, so they sit outside Layout.

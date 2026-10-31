@@ -27,6 +27,18 @@ const DEFAULT_CATEGORIES = [
   { id: "other", name: "Other", color: "gray", active: true },
 ];
 
+// The colors a category can use. Each one matches --cat-<color> in theme.css.
+export const CATEGORY_COLORS = [
+  "teal",
+  "blue",
+  "orange",
+  "purple",
+  "ochre",
+  "rose",
+  "cyan",
+  "gray",
+];
+
 // Sample expenses: [days ago, amount, category id, note].
 // Using "days ago" keeps the sample data fresh whenever you first open the app.
 const SAMPLE_ROWS = [
@@ -78,7 +90,12 @@ function createSampleData() {
       };
     },
   );
-  return { expenses, categories: DEFAULT_CATEGORIES, settings: DEFAULT_SETTINGS };
+  return {
+    expenses,
+    // Copies, so changing a category never changes the defaults themselves.
+    categories: DEFAULT_CATEGORIES.map((category) => ({ ...category })),
+    settings: DEFAULT_SETTINGS,
+  };
 }
 
 // Reads our data from localStorage. The first time, there is nothing saved yet,
@@ -109,6 +126,72 @@ export async function getExpenses() {
 
 export async function getCategories() {
   return loadData().categories;
+}
+
+// "Eating out" → "eating-out". Lowercase letters and digits, joined by "-".
+function slugify(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-") // anything else becomes "-"
+    .replace(/^-|-$/g, ""); // no "-" at the start or end
+}
+
+// Adds a category, e.g. addCategory({ name: "Eating out", color: "rose" }).
+// Its ID is made from the name, so it stays readable in the sheet.
+export async function addCategory({ name, color }) {
+  const data = loadData();
+  const cleanName = name.trim();
+  if (cleanName === "") {
+    throw new Error("Give the category a name.");
+  }
+
+  // Names are compared ignoring case: "food" and "Food" are the same.
+  const sameName = data.categories.find(
+    (category) => category.name.toLowerCase() === cleanName.toLowerCase(),
+  );
+  if (sameName && sameName.active) {
+    throw new Error(`You already have a category called ${sameName.name}.`);
+  }
+  if (sameName) {
+    // It was removed before. Bring it back, so its old expenses rejoin it.
+    sameName.active = true;
+    sameName.color = color;
+    saveData(data);
+    return sameName;
+  }
+
+  // Make sure the ID isn't taken: "gifts", then "gifts-2", "gifts-3", ...
+  const base = slugify(cleanName) || "category"; // e.g. a name with no a–z letters
+  let id = base;
+  let number = 2;
+  while (data.categories.some((category) => category.id === id)) {
+    id = `${base}-${number}`;
+    number += 1;
+  }
+
+  const category = { id, name: cleanName, color, active: true };
+  // Insert it just before "Other", so Other stays last.
+  const otherIndex = data.categories.findIndex((item) => item.id === "other");
+  const position = otherIndex === -1 ? data.categories.length : otherIndex;
+  data.categories.splice(position, 0, category);
+  saveData(data);
+  return category;
+}
+
+// Removes a category from the choices. It isn't deleted: past expenses still
+// point to it and keep showing its name and color. "Other" can't be removed,
+// because it's where anything without a valid category ends up.
+export async function removeCategory(id) {
+  if (id === "other") {
+    throw new Error("Other can't be removed.");
+  }
+  const data = loadData();
+  const category = data.categories.find((item) => item.id === id);
+  if (!category) {
+    throw new Error("This category no longer exists.");
+  }
+  category.active = false;
+  saveData(data);
 }
 
 export async function getSettings() {

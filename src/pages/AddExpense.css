@@ -98,10 +98,11 @@ a.icon-button:hover {
   background: var(--on-accent) !important; /* override the inline category color */
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+/* "+ New": a dashed chip, so it doesn't look like a category */
+.chip-new {
+  border-style: dashed;
+  color: var(--text-2);
+  text-decoration: none;
 }
 
 /* Date and note */
