@@ -49,6 +49,26 @@
   gap: 12px;
   min-height: 60px;
   padding: 10px 16px;
+  color: var(--text); /* rows are links; keep normal text color */
+  text-decoration: none;
+}
+
+.expense:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* Round the hover background to match the card's corners. */
+.expense:first-child {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.expense:last-child {
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.expense:only-child {
+  border-radius: var(--radius-lg);
 }
 
 /* A line between rows, but not above the first one */

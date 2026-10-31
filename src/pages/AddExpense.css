@@ -180,3 +180,26 @@ a.icon-button:hover {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Shown when saving or deleting fails */
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+/* Delete: an outlined red button, quieter than Save on purpose */
+.delete {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--danger);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete:hover {
+  background: var(--surface-2);
+}

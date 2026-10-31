@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
-import { addExpense, getCategories } from "../data/store.js";
+import {
+  addExpense,
+  deleteExpense,
+  getCategories,
+  getExpenses,
+  updateExpense,
+} from "../data/store.js";
 import { todayISO } from "../lib/dates.js";
 import { formatAmountInput, pressKey } from "../lib/money.js";
 import "./AddExpense.css";
@@ -9,8 +15,15 @@ import "./AddExpense.css";
 // The keypad's 12 keys, in the order they appear (3 per row).
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 
+// One screen for both adding (/add) and editing (/edit/some-id).
 function AddExpense() {
   const navigate = useNavigate(); // lets us change screens from code
+  const { id } = useParams(); // the ":id" part of /edit/:id, or undefined on /add
+  const isEditing = id !== undefined;
+
+  // "loading" → "ready", or "missing" if the expense to edit doesn't exist.
+  const [status, setStatus] = useState("loading");
+  const [error, setError] = useState("");
 
   // Everything the user can change on this screen lives in state.
   const [categories, setCategories] = useState([]);
@@ -20,12 +33,36 @@ function AddExpense() {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load the categories to show as chips. Removed ones (active: false) are skipped.
+  // Load categories. When editing, also find the expense and fill in the form.
   useEffect(() => {
-    getCategories().then((list) =>
-      setCategories(list.filter((category) => category.active)),
+    Promise.all([getCategories(), getExpenses()]).then(
+      ([categoryList, expenseList]) => {
+        const existing = id
+          ? expenseList.find((expense) => expense.id === id)
+          : null;
+
+        if (id && !existing) {
+          setStatus("missing");
+          return;
+        }
+
+        // Removed categories are hidden, except the one this expense already uses.
+        setCategories(
+          categoryList.filter(
+            (category) => category.active || category.id === existing?.categoryId,
+          ),
+        );
+
+        if (existing) {
+          setAmountText(String(existing.amount)); // 1240.5 → "1240.5"
+          setCategoryId(existing.categoryId);
+          setDate(existing.date);
+          setNote(existing.note);
+        }
+        setStatus("ready");
+      },
     );
-  }, []);
+  }, [id]); // run again if the URL switches to a different expense
 
   // On a computer, let the number keys and Backspace work like the keypad.
   useEffect(() => {
@@ -53,8 +90,50 @@ function AddExpense() {
     if (!canSave) return;
 
     setSaving(true); // disables the button so a double tap can't save twice
-    await addExpense({ amount, categoryId, date, note: note.trim() });
-    navigate("/history");
+    setError("");
+    const input = { amount, categoryId, date, note: note.trim() };
+
+    try {
+      if (isEditing) {
+        await updateExpense(id, input);
+      } else {
+        await addExpense(input);
+      }
+      navigate("/history");
+    } catch (problem) {
+      setError(problem.message); // e.g. the expense was deleted meanwhile
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    // window.confirm shows the browser's OK / Cancel box and returns true or false.
+    if (!window.confirm("Delete this expense?")) return;
+
+    try {
+      await deleteExpense(id);
+      navigate("/history");
+    } catch (problem) {
+      setError(problem.message);
+    }
+  }
+
+  // ---------- What to show ----------
+  // These early returns come after all the hooks above. React needs every
+  // hook to run on every draw, in the same order, so hooks can't sit below
+  // a return that only happens sometimes.
+
+  if (status === "loading") {
+    return <div className="add muted">Loading…</div>;
+  }
+
+  if (status === "missing") {
+    return (
+      <div className="add">
+        <p>This expense no longer exists. It may have been deleted.</p>
+        <Link to="/history">Back to history</Link>
+      </div>
+    );
   }
 
   return (
@@ -63,7 +142,7 @@ function AddExpense() {
         <Link to="/history" className="icon-button" aria-label="Close">
           <Icon name="close" />
         </Link>
-        <h1 className="add-title">Add expense</h1>
+        <h1 className="add-title">{isEditing ? "Edit expense" : "Add expense"}</h1>
         <span className="icon-button" /> {/* empty space to keep the title centered */}
       </div>
 
@@ -130,9 +209,21 @@ function AddExpense() {
         ))}
       </div>
 
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+
       <button type="submit" className="btn-primary save" disabled={!canSave}>
-        {saving ? "Saving…" : "Save expense"}
+        {saving ? "Saving…" : isEditing ? "Save changes" : "Save expense"}
       </button>
+
+      {isEditing && (
+        <button type="button" className="delete" onClick={handleDelete}>
+          Delete expense
+        </button>
+      )}
     </form>
   );
 }

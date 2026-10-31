@@ -122,3 +122,27 @@ export async function addExpense(input) {
   saveData(data);
   return expense;
 }
+
+// Changes an existing expense. It's found by its ID, never by its position:
+// in a real sheet, rows can be re-sorted or deleted by hand at any time.
+export async function updateExpense(id, changes) {
+  const data = loadData();
+  const expense = data.expenses.find((item) => item.id === id);
+  if (!expense) {
+    throw new Error("This expense no longer exists. It may have been deleted.");
+  }
+  Object.assign(expense, changes); // copy the changed fields onto the expense
+  saveData(data);
+  return expense;
+}
+
+// Removes an expense, found by its ID.
+export async function deleteExpense(id) {
+  const data = loadData();
+  const remaining = data.expenses.filter((item) => item.id !== id);
+  if (remaining.length === data.expenses.length) {
+    throw new Error("This expense no longer exists. It may have been deleted.");
+  }
+  data.expenses = remaining;
+  saveData(data);
+}

@@ -20,8 +20,10 @@ function App() {
           <Route path="/settings" element={<Settings />} />
         </Route>
 
-        {/* Add expense takes the whole screen, so it sits outside Layout. */}
+        {/* Add and edit take the whole screen, so they sit outside Layout.
+            Both use the same screen; ":id" is filled in from the URL. */}
         <Route path="/add" element={<AddExpense />} />
+        <Route path="/edit/:id" element={<AddExpense />} />
 
         {/* Any other address (including "/") goes to History. */}
         <Route path="*" element={<Navigate to="/history" replace />} />

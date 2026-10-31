@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getCategories, getExpenses } from "../data/store.js";
 import { dayLabel, monthKey, monthLabel, todayISO } from "../lib/dates.js";
 import { formatMoney } from "../lib/money.js";
@@ -68,7 +69,12 @@ function History() {
               const color = category ? category.color : "gray";
 
               return (
-                <div key={expense.id} className="expense">
+                // Each row is a link to the edit screen for that expense.
+                <Link
+                  key={expense.id}
+                  to={`/edit/${expense.id}`}
+                  className="expense"
+                >
                   <span
                     className="badge"
                     style={{ color: `var(--cat-${color})`, background: `var(--cat-${color}-tint)` }}
@@ -80,7 +86,7 @@ function History() {
                     <span className="expense-category">{name}</span>
                   </span>
                   <span className="expense-amount">{formatMoney(expense.amount)}</span>
-                </div>
+                </Link>
               );
             })}
           </div>
