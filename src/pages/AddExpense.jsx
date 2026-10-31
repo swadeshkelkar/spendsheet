@@ -6,10 +6,11 @@ import {
   deleteExpense,
   getCategories,
   getExpenses,
+  getSettings,
   updateExpense,
 } from "../data/store.js";
 import { todayISO } from "../lib/dates.js";
-import { formatAmountInput, pressKey } from "../lib/money.js";
+import { currencySymbol, formatAmountInput, pressKey } from "../lib/money.js";
 import "./AddExpense.css";
 
 // The keypad's 12 keys, in the order they appear (3 per row).
@@ -27,6 +28,7 @@ function AddExpense() {
 
   // Everything the user can change on this screen lives in state.
   const [categories, setCategories] = useState([]);
+  const [currency, setCurrency] = useState("INR");
   const [amountText, setAmountText] = useState(""); // e.g. "1240.5"
   const [categoryId, setCategoryId] = useState("food");
   const [date, setDate] = useState(todayISO());
@@ -35,8 +37,10 @@ function AddExpense() {
 
   // Load categories. When editing, also find the expense and fill in the form.
   useEffect(() => {
-    Promise.all([getCategories(), getExpenses()]).then(
-      ([categoryList, expenseList]) => {
+    Promise.all([getCategories(), getExpenses(), getSettings()]).then(
+      ([categoryList, expenseList, settings]) => {
+        setCurrency(settings.currency);
+
         const existing = id
           ? expenseList.find((expense) => expense.id === id)
           : null;
@@ -149,9 +153,9 @@ function AddExpense() {
       <div className="amount">
         <span className="muted">Amount</span>
         <div className="amount-value">
-          <span className="amount-symbol">₹</span>
+          <span className="amount-symbol">{currencySymbol(currency)}</span>
           <span className={amountText === "" ? "amount-digits empty" : "amount-digits"}>
-            {formatAmountInput(amountText)}
+            {formatAmountInput(amountText, currency)}
           </span>
         </div>
       </div>

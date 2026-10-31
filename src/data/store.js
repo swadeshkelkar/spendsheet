@@ -1,4 +1,4 @@
-// The app's data: expenses and categories.
+// The app's data: expenses, categories and settings.
 //
 // For now everything is kept in the browser (localStorage) and starts with
 // sample data. Later, a Google Sheets version will offer the same functions,
@@ -11,6 +11,11 @@ import { addDays, parseISODate, todayISO } from "../lib/dates.js";
 
 // The key our data is saved under in localStorage.
 const STORAGE_KEY = "spendsheet:data";
+
+// Settings every new user starts with.
+//   currency:     an ISO currency code, e.g. "INR" or "USD"
+//   fyStartMonth: the month the financial year starts in (4 = April, 1 = January)
+const DEFAULT_SETTINGS = { currency: "INR", fyStartMonth: 4 };
 
 // Categories every new user starts with. "Other" is the fallback and stays last.
 const DEFAULT_CATEGORIES = [
@@ -73,7 +78,7 @@ function createSampleData() {
       };
     },
   );
-  return { expenses, categories: DEFAULT_CATEGORIES };
+  return { expenses, categories: DEFAULT_CATEGORIES, settings: DEFAULT_SETTINGS };
 }
 
 // Reads our data from localStorage. The first time, there is nothing saved yet,
@@ -81,7 +86,11 @@ function createSampleData() {
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
-    return JSON.parse(saved); // text → JavaScript object
+    const data = JSON.parse(saved); // text → JavaScript object
+    // Data saved before settings existed has none. Start from the defaults and
+    // let anything saved win, so older data keeps working.
+    data.settings = { ...DEFAULT_SETTINGS, ...data.settings };
+    return data;
   }
   const data = createSampleData();
   saveData(data);
@@ -100,6 +109,19 @@ export async function getExpenses() {
 
 export async function getCategories() {
   return loadData().categories;
+}
+
+export async function getSettings() {
+  return loadData().settings;
+}
+
+// Changes some settings, e.g. updateSettings({ currency: "USD" }).
+// Settings not mentioned stay as they were.
+export async function updateSettings(changes) {
+  const data = loadData();
+  data.settings = { ...data.settings, ...changes };
+  saveData(data);
+  return data.settings;
 }
 
 // Throws away saved data so the next read starts again from the samples.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCategories, getExpenses } from "../data/store.js";
+import { getCategories, getExpenses, getSettings } from "../data/store.js";
 import { dayLabel, monthKey, monthLabel, todayISO } from "../lib/dates.js";
 import { formatMoney } from "../lib/money.js";
 import { groupByDay, inMonth, total } from "../lib/summary.js";
@@ -9,15 +9,19 @@ import "./History.css";
 function History() {
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [currency, setCurrency] = useState("INR");
   const [loading, setLoading] = useState(true);
 
-  // Load expenses and categories together, once, when the screen opens.
+  // Load expenses, categories and settings together, once, when the screen opens.
   useEffect(() => {
-    Promise.all([getExpenses(), getCategories()]).then(([expenseList, categoryList]) => {
-      setExpenses(expenseList);
-      setCategories(categoryList);
-      setLoading(false);
-    });
+    Promise.all([getExpenses(), getCategories(), getSettings()]).then(
+      ([expenseList, categoryList, settings]) => {
+        setExpenses(expenseList);
+        setCategories(categoryList);
+        setCurrency(settings.currency);
+        setLoading(false);
+      },
+    );
   }, []);
 
   if (loading) {
@@ -45,7 +49,7 @@ function History() {
       <div className="hero">
         <div>
           <div className="hero-label">Spent in {monthName}</div>
-          <div className="hero-total">{formatMoney(total(monthExpenses))}</div>
+          <div className="hero-total">{formatMoney(total(monthExpenses), currency)}</div>
         </div>
         <div className="hero-label">{monthExpenses.length} expenses</div>
       </div>
@@ -58,7 +62,7 @@ function History() {
         <section key={day.date} className="day">
           <div className="day-head">
             <span>{dayLabel(day.date)}</span>
-            <span>{formatMoney(day.total)}</span>
+            <span>{formatMoney(day.total, currency)}</span>
           </div>
 
           <div className="day-list">
@@ -85,7 +89,7 @@ function History() {
                     <span className="expense-note">{expense.note || name}</span>
                     <span className="expense-category">{name}</span>
                   </span>
-                  <span className="expense-amount">{formatMoney(expense.amount)}</span>
+                  <span className="expense-amount">{formatMoney(expense.amount, currency)}</span>
                 </Link>
               );
             })}

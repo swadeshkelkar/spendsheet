@@ -65,6 +65,22 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.settings-note {
-  font-size: 13px;
+/* Title on the left, control on the right (used by Currency) */
+.setting-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.select {
+  max-width: 55%;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
 }
