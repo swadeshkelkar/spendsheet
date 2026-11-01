@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu:latest
+    steps:
+      # 1. Download your code onto that machine
+      - uses: actions/checkout@v5
+
+      # 2. Install Node (the same tool you run locally), and cache npm downloads
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # 3. Install exactly the versions in package-lock.json
+      - run: npm ci
+
+      # 4. The same checks you run by hand. Any failure stops the job.
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
