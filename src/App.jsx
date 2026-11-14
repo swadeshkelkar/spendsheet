@@ -1,10 +1,12 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
+import RequireAuth from "./components/RequireAuth.jsx";
 import AddExpense from "./pages/AddExpense.jsx";
 import Categories from "./pages/Categories.jsx";
 import History from "./pages/History.jsx";
 import Summary from "./pages/Summary.jsx";
 import Settings from "./pages/Settings.jsx";
+import Welcome from "./pages/Welcome.jsx";
 
 // App decides which screen to show based on the URL.
 //
@@ -14,8 +16,18 @@ function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* Screens inside Layout get the tab bar around them. */}
-        <Route element={<Layout />}>
+        {/* The only screen you can see without signing in. */}
+        <Route path="/welcome" element={<Welcome />} />
+
+        {/* Screens inside Layout get the tab bar around them.
+            RequireAuth sends you to Welcome if you aren't signed in. */}
+        <Route
+          element={
+            <RequireAuth>
+              <Layout />
+            </RequireAuth>
+          }
+        >
           <Route path="/history" element={<History />} />
           <Route path="/summary" element={<Summary />} />
           <Route path="/settings" element={<Settings />} />
@@ -25,8 +37,22 @@ function App() {
 
         {/* Add and edit take the whole screen, so they sit outside Layout.
             Both use the same screen; ":id" is filled in from the URL. */}
-        <Route path="/add" element={<AddExpense />} />
-        <Route path="/edit/:id" element={<AddExpense />} />
+        <Route
+          path="/add"
+          element={
+            <RequireAuth>
+              <AddExpense />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/edit/:id"
+          element={
+            <RequireAuth>
+              <AddExpense />
+            </RequireAuth>
+          }
+        />
 
         {/* Any other address (including "/") goes to History. */}
         <Route path="*" element={<Navigate to="/history" replace />} />

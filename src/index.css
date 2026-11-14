@@ -86,6 +86,13 @@ select {
   font-size: 28px;
 }
 
+/* An error message under a form */
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
 /* A small round color dot, e.g. a category's color */
 .dot {
   width: 8px;

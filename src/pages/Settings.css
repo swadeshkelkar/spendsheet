@@ -95,3 +95,19 @@
   color: var(--text);
   background: var(--surface-2);
 }
+
+.signout-button {
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.signout-button:hover {
+  background: var(--surface-2);
+}

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
 import { getSettings, updateSettings } from "../data/store.js";
+import { getSession, signOut } from "../lib/auth.js";
 import { CURRENCIES, currencySymbol } from "../lib/money.js";
 import { getThemeChoice, setThemeChoice } from "../lib/theme.js";
 import "./Settings.css";
@@ -20,6 +21,7 @@ const FY_OPTIONS = [
 ];
 
 function Settings() {
+  const navigate = useNavigate();
   // The theme is saved on this device, so it can be read straight away.
   const [theme, setTheme] = useState(getThemeChoice);
 
@@ -34,6 +36,11 @@ function Settings() {
   function chooseTheme(choice) {
     setTheme(choice); // update the control on screen
     setThemeChoice(choice); // save it and recolor the app
+  }
+
+  function handleSignOut() {
+    signOut();
+    navigate("/welcome", { replace: true });
   }
 
   // changes is part of the settings, e.g. { currency: "USD" }.
@@ -135,6 +142,23 @@ function Settings() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="settings-group">
+        <h2 className="settings-heading">Account</h2>
+
+        <div className="card settings-card">
+          <div className="setting setting-row">
+            <div>
+              <div className="setting-title">Google account</div>
+              {/* ?. because the session could run out while this screen is open */}
+              <div className="setting-hint">{getSession()?.email}</div>
+            </div>
+            <button type="button" className="signout-button" onClick={handleSignOut}>
+              Sign out
+            </button>
           </div>
         </div>
       </section>

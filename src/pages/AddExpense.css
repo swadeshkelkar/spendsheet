@@ -182,12 +182,6 @@ a.icon-button:hover {
   white-space: nowrap;
 }
 
-/* Shown when saving or deleting fails */
-.form-error {
-  margin: 0;
-  color: var(--danger);
-  font-size: 14px;
-}
 
 /* Delete: an outlined red button, quieter than Save on purpose */
 .delete {
