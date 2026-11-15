@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import { getSpreadsheet, setFyStartMonth } from "../data/spreadsheet.js";
 import { getSettings, updateSettings } from "../data/store.js";
 import { getSession, signOut } from "../lib/auth.js";
 import { CURRENCIES, currencySymbol } from "../lib/money.js";
@@ -29,13 +30,40 @@ function Settings() {
   // load (later from Google Sheets). null means "not loaded yet".
   const [settings, setSettings] = useState(null);
 
+  // Your spreadsheet in Google Drive: { name, url, fyStartMonth, ... }.
+  // Loaded separately, so the rest of the screen doesn't wait for Google.
+  const [sheet, setSheet] = useState(null);
+  const [sheetError, setSheetError] = useState("");
+  const [switchingYear, setSwitchingYear] = useState(false);
+
   useEffect(() => {
     getSettings().then(setSettings);
+    getSpreadsheet()
+      .then(setSheet)
+      .catch((problem) => setSheetError(problem.message));
   }, []);
 
   function chooseTheme(choice) {
     setTheme(choice); // update the control on screen
     setThemeChoice(choice); // save it and recolor the app
+  }
+
+  async function chooseFyStart(month) {
+    if (sheet === null || month === sheet.fyStartMonth) return;
+    const ok = window.confirm(
+      "Switch how financial years are counted? Spendsheet will use a different " +
+        "file for this year (and create it if needed). Your current file stays in your Drive.",
+    );
+    if (!ok) return;
+
+    setSwitchingYear(true);
+    setSheetError("");
+    try {
+      setSheet(await setFyStartMonth(month)); // saves it, then finds or creates the file
+    } catch (problem) {
+      setSheetError(problem.message);
+    }
+    setSwitchingYear(false);
   }
 
   function handleSignOut() {
@@ -135,8 +163,9 @@ function Settings() {
                   key={option.value}
                   type="button"
                   role="radio"
-                  aria-checked={settings.fyStartMonth === option.value}
-                  onClick={() => changeSettings({ fyStartMonth: option.value })}
+                  aria-checked={sheet?.fyStartMonth === option.value}
+                  disabled={sheet === null || switchingYear}
+                  onClick={() => chooseFyStart(option.value)}
                 >
                   {option.label}
                 </button>
@@ -150,6 +179,31 @@ function Settings() {
         <h2 className="settings-heading">Account</h2>
 
         <div className="card settings-card">
+          <div className="setting setting-row">
+            <div>
+              <div className="setting-title">Your spreadsheet</div>
+              {sheetError ? (
+                <div className="setting-hint setting-error">{sheetError}</div>
+              ) : (
+                <div className="setting-hint">
+                  {sheet && !switchingYear ? sheet.name : "Finding your spreadsheet…"}
+                </div>
+              )}
+            </div>
+            {/* Opens Google Sheets in a new tab. rel="noreferrer" stops that
+                tab from being able to control this one. */}
+            {sheet && (
+              <a
+                href={sheet.url}
+                target="_blank"
+                rel="noreferrer"
+                className="outline-button"
+              >
+                Open
+              </a>
+            )}
+          </div>
+
           <div className="setting setting-row">
             <div>
               <div className="setting-title">Google account</div>

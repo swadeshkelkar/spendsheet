@@ -13,12 +13,12 @@ import { addDays, parseISODate, todayISO } from "../lib/dates.js";
 const STORAGE_KEY = "spendsheet:data";
 
 // Settings every new user starts with.
-//   currency:     an ISO currency code, e.g. "INR" or "USD"
-//   fyStartMonth: the month the financial year starts in (4 = April, 1 = January)
-const DEFAULT_SETTINGS = { currency: "INR", fyStartMonth: 4 };
+//   currency: an ISO currency code, e.g. "INR" or "USD"
+// (The financial-year start is saved in Google Drive; see spreadsheet.js.)
+const DEFAULT_SETTINGS = { currency: "INR" };
 
 // Categories every new user starts with. "Other" is the fallback and stays last.
-const DEFAULT_CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   { id: "food", name: "Food", color: "teal", active: true },
   { id: "transport", name: "Transport", color: "purple", active: true },
   { id: "shopping", name: "Shopping", color: "orange", active: true },

@@ -111,3 +111,28 @@
 .signout-button:hover {
   background: var(--surface-2);
 }
+
+/* "Open": an outlined button, styled like Sign out but in the accent color */
+.outline-button {
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.outline-button:hover {
+  background: var(--surface-2);
+}
+
+.setting-error {
+  color: var(--danger);
+}
+
+.segmented button:disabled {
+  cursor: wait;
+}

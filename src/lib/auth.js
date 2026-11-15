@@ -79,8 +79,10 @@ export function signIn() {
 
       // Called when the user finishes in the popup.
       callback: async (response) => {
+        console.log(response);
         if (response.error) {
           reject(new Error("Sign-in didn't work. Please try again."));
+          console.log(new Error("Sign-in didn't work. Please try again."));
           return;
         }
 
@@ -133,9 +135,12 @@ export function signIn() {
 
 // Asks Google whose token this is. The "email" permission allows exactly this.
 async function fetchEmail(token) {
-  const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await fetch(
+    "https://www.googleapis.com/oauth2/v3/userinfo",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
   if (!response.ok) {
     throw new Error("Couldn't read your Google account. Please try again.");
   }
