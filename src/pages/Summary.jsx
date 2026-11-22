@@ -1,38 +1,32 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Icon from "../components/Icon.jsx";
-import { getCategories, getExpenses, getSettings } from "../data/store.js";
+import LoadError from "../components/LoadError.jsx";
+import { useSpendingData } from "../hooks/useSpendingData.js";
 import { monthKey, monthLabel, shiftMonth, todayISO } from "../lib/dates.js";
 import { formatMoney } from "../lib/money.js";
 import { byCategory, inMonth, total } from "../lib/summary.js";
 import "./Summary.css";
 
 function Summary() {
-  const [expenses, setExpenses] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [currency, setCurrency] = useState("INR");
-  const [loading, setLoading] = useState(true);
-
   const thisMonth = monthKey(todayISO()); // e.g. "2026-10"
   const [month, setMonth] = useState(thisMonth); // the month being shown
 
-  useEffect(() => {
-    Promise.all([getExpenses(), getCategories(), getSettings()]).then(
-      ([expenseList, categoryList, settings]) => {
-        setExpenses(expenseList);
-        setCategories(categoryList);
-        setCurrency(settings.currency);
-        setLoading(false);
-      },
-    );
-  }, []);
+  // Loads from your spreadsheet, and again whenever you come back to the app.
+  const { data, error, retry } = useSpendingData();
 
-  if (loading) {
+  if (data === null) {
     return (
       <div className="page">
-        <p className="muted">Loading…</p>
+        {error ? (
+          <LoadError message={error} onRetry={retry} />
+        ) : (
+          <p className="muted">Loading…</p>
+        )}
       </div>
     );
   }
+
+  const { expenses, categories, currency } = data;
 
   // Everything below is worked out from state on every draw.
   const monthExpenses = inMonth(expenses, month);
@@ -55,6 +49,8 @@ function Summary() {
   return (
     <div className="page">
       <h1 className="page-title">Summary</h1>
+
+      {error && <LoadError message={error} onRetry={retry} />}
 
       <div className="month-switch">
         <button

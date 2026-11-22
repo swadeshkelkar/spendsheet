@@ -86,6 +86,29 @@ select {
   font-size: 28px;
 }
 
+/* A failed load: the message, then a way out */
+.load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.load-error p {
+  margin: 0;
+  color: var(--danger);
+}
+
+.load-error-button {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.load-error-button:hover {
+  color: var(--on-accent);
+}
+
 /* An error message under a form */
 .form-error {
   margin: 0;

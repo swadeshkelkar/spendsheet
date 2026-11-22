@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import LoadError from "../components/LoadError.jsx";
 import {
   addExpense,
   deleteExpense,
-  getCategories,
   getExpenses,
-  getSettings,
   updateExpense,
-} from "../data/store.js";
+} from "../data/expenses.js";
+import { getCategories, getSettings } from "../data/store.js";
 import { todayISO } from "../lib/dates.js";
 import { currencySymbol, formatAmountInput, pressKey } from "../lib/money.js";
 import "./AddExpense.css";
@@ -25,7 +25,11 @@ function AddExpense() {
   const draft = useLocation().state?.draft;
 
   // "loading" → "ready", or "missing" if the expense to edit doesn't exist.
+  // "loading" → "ready", "missing" if the expense to edit doesn't exist, or
+  // "failed" if loading didn't work (then loadError says why).
   const [status, setStatus] = useState("loading");
+  const [loadError, setLoadError] = useState("");
+  const [attempt, setAttempt] = useState(0); // changing it loads again
   const [error, setError] = useState("");
 
   // Everything the user can change on this screen lives in state.
@@ -40,8 +44,9 @@ function AddExpense() {
 
   // Load categories. When editing, also find the expense and fill in the form.
   useEffect(() => {
-    Promise.all([getCategories(), getExpenses(), getSettings()]).then(
-      ([categoryList, expenseList, settings]) => {
+    // Expenses are only needed when editing; adding skips that trip to Google.
+    Promise.all([getCategories(), id ? getExpenses() : [], getSettings()])
+      .then(([categoryList, expenseList, settings]) => {
         setCurrency(settings.currency);
 
         const existing = id
@@ -71,9 +76,12 @@ function AddExpense() {
           setNote(existing.note);
         }
         setStatus("ready");
-      },
-    );
-  }, [id]); // run again if the URL switches to a different expense
+      })
+      .catch((problem) => {
+        setLoadError(problem.message);
+        setStatus("failed");
+      });
+  }, [id, attempt]); // run again for a different expense, or on "Try again"
 
   // On a computer, let the number keys and Backspace work like the keypad.
   useEffect(() => {
@@ -136,6 +144,21 @@ function AddExpense() {
 
   if (status === "loading") {
     return <div className="add muted">Loading…</div>;
+  }
+
+  if (status === "failed") {
+    return (
+      <div className="add">
+        <LoadError
+          message={loadError}
+          onRetry={() => {
+            setStatus("loading");
+            setAttempt((count) => count + 1);
+          }}
+        />
+        <Link to="/history">Back to history</Link>
+      </div>
+    );
   }
 
   if (status === "missing") {

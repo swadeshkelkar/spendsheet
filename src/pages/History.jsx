@@ -1,36 +1,29 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCategories, getExpenses, getSettings } from "../data/store.js";
+import LoadError from "../components/LoadError.jsx";
+import { useSpendingData } from "../hooks/useSpendingData.js";
 import { dayLabel, monthKey, monthLabel, todayISO } from "../lib/dates.js";
 import { formatMoney } from "../lib/money.js";
 import { groupByDay, inMonth, total } from "../lib/summary.js";
 import "./History.css";
 
 function History() {
-  const [expenses, setExpenses] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [currency, setCurrency] = useState("INR");
-  const [loading, setLoading] = useState(true);
+  // Loads from your spreadsheet, and again whenever you come back to the app.
+  const { data, error, retry } = useSpendingData();
 
-  // Load expenses, categories and settings together, once, when the screen opens.
-  useEffect(() => {
-    Promise.all([getExpenses(), getCategories(), getSettings()]).then(
-      ([expenseList, categoryList, settings]) => {
-        setExpenses(expenseList);
-        setCategories(categoryList);
-        setCurrency(settings.currency);
-        setLoading(false);
-      },
-    );
-  }, []);
-
-  if (loading) {
+  // Nothing to show yet: still loading, or the first load failed.
+  if (data === null) {
     return (
       <div className="page">
-        <p className="muted">Loading your expenses…</p>
+        {error ? (
+          <LoadError message={error} onRetry={retry} />
+        ) : (
+          <p className="muted">Loading your expenses…</p>
+        )}
       </div>
     );
   }
+
+  const { expenses, categories, currency } = data;
 
   // Everything below is worked out from state on every draw.
   const thisMonth = monthKey(todayISO()); // e.g. "2026-10"
@@ -45,6 +38,9 @@ function History() {
   return (
     <div className="page">
       <h1 className="page-title">History</h1>
+
+      {/* A later reload failed: keep showing what we have, with the error on top. */}
+      {error && <LoadError message={error} onRetry={retry} />}
 
       <div className="hero">
         <div>
