@@ -13,7 +13,17 @@ import { todayISO } from "../lib/dates.js";
 import { getFinancialYear, sheetFileName } from "../lib/financialYear.js";
 import { getSession } from "../lib/auth.js";
 import { googleFetch } from "../lib/google.js";
-import { DEFAULT_CATEGORIES } from "./defaults.js";
+import { CURRENCIES } from "../lib/money.js";
+import {
+  categoryToRow,
+  rowsToCategories,
+  rowsToSettings,
+} from "../lib/sheetRows.js";
+import {
+  CATEGORY_COLORS,
+  DEFAULT_CATEGORIES,
+  DEFAULT_SETTINGS,
+} from "./defaults.js";
 
 const DRIVE = "https://www.googleapis.com/drive/v3/files";
 export const SHEETS = "https://sheets.googleapis.com/v4/spreadsheets";
@@ -21,7 +31,14 @@ const FOLDER_TYPE = "application/vnd.google-apps.folder";
 const SPREADSHEET_TYPE = "application/vnd.google-apps.spreadsheet";
 
 // The tabs in every year's file, and their header rows.
-export const EXPENSE_HEADERS = ["ID", "Date", "Amount", "Category", "Note", "Created at"];
+export const EXPENSE_HEADERS = [
+  "ID",
+  "Date",
+  "Amount",
+  "Category",
+  "Note",
+  "Created at",
+];
 const CATEGORY_HEADERS = ["ID", "Name", "Color", "Active"];
 const SETTINGS_HEADERS = ["Setting", "Value"];
 
@@ -64,11 +81,59 @@ async function findOrCreateFolder() {
 
 // ---------- A year's spreadsheet ----------
 
+// What a new year's file starts with: the categories and currency from your
+// latest file, so a new year doesn't make you set them up again. Your very
+// first file starts from the defaults.
+async function startingValues(folderId) {
+  const defaults = {
+    categoryRows: DEFAULT_CATEGORIES.map(categoryToRow),
+    currency: DEFAULT_SETTINGS.currency,
+  };
+  try {
+    // Spreadsheets in our folder, newest first.
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and mimeType = '${SPREADSHEET_TYPE}' and trashed = false`,
+      orderBy: "createdTime desc",
+      fields: "files(id, appProperties)",
+    });
+    const { files } = await googleFetch(`${DRIVE}?${params}`);
+    const latest = files.find((file) => file.appProperties?.spendsheetYear);
+    if (!latest) return defaults;
+
+    const ranges = new URLSearchParams({
+      valueRenderOption: "UNFORMATTED_VALUE",
+    });
+    ranges.append("ranges", "Categories!A:D");
+    ranges.append("ranges", "Settings!A:B");
+    const { valueRanges } = await googleFetch(
+      `${SHEETS}/${latest.id}/values:batchGet?${ranges}`,
+    );
+    const categories = rowsToCategories(
+      (valueRanges[0].values || []).slice(1),
+      CATEGORY_COLORS,
+    );
+    const settings = rowsToSettings(
+      (valueRanges[1].values || []).slice(1),
+      DEFAULT_SETTINGS,
+      CURRENCIES.map((currency) => currency.code),
+    );
+    return {
+      categoryRows: categories.map(categoryToRow),
+      currency: settings.currency,
+    };
+  } catch {
+    return defaults; // can't read the old file (say its tabs were deleted): start fresh
+  }
+}
+
 async function findOrCreateYearFile(folder, year, name) {
   const existing = await findFile(
     `'${folder.id}' in parents and appProperties has { key='spendsheetYear' and value='${year}' }`,
   );
   if (existing) return existing;
+
+  // Read these before creating the new file, or it would be the "latest" one.
+  const starting = await startingValues(folder.id);
 
   // 1. An empty spreadsheet inside our folder, labelled with its year.
   const file = await createFile({
@@ -94,12 +159,24 @@ async function findOrCreateYearFile(folder, year, name) {
       requests: [
         {
           updateSheetProperties: {
-            properties: { sheetId: 0, title: "Expenses", gridProperties: frozenHeader },
+            properties: {
+              sheetId: 0,
+              title: "Expenses",
+              gridProperties: frozenHeader,
+            },
             fields: "title,gridProperties.frozenRowCount",
           },
         },
-        { addSheet: { properties: { ...tabs[1], gridProperties: frozenHeader } } },
-        { addSheet: { properties: { ...tabs[2], gridProperties: frozenHeader } } },
+        {
+          addSheet: {
+            properties: { ...tabs[1], gridProperties: frozenHeader },
+          },
+        },
+        {
+          addSheet: {
+            properties: { ...tabs[2], gridProperties: frozenHeader },
+          },
+        },
         ...tabs.map((tab) => ({
           repeatCell: {
             range: { sheetId: tab.sheetId, startRowIndex: 0, endRowIndex: 1 },
@@ -115,7 +192,12 @@ async function findOrCreateYearFile(folder, year, name) {
         // strict: you can still type something else, and the app reads it as Other.
         {
           setDataValidation: {
-            range: { sheetId: 0, startRowIndex: 1, startColumnIndex: 3, endColumnIndex: 4 },
+            range: {
+              sheetId: 0,
+              startRowIndex: 1,
+              startColumnIndex: 3,
+              endColumnIndex: 4,
+            },
             rule: {
               condition: {
                 type: "ONE_OF_RANGE",
@@ -140,17 +222,12 @@ async function findOrCreateYearFile(folder, year, name) {
         { range: "Expenses!A1", values: [EXPENSE_HEADERS] },
         {
           range: "Categories!A1",
-          values: [
-            CATEGORY_HEADERS,
-            ...DEFAULT_CATEGORIES.map((category) => [
-              category.id,
-              category.name,
-              category.color,
-              "TRUE",
-            ]),
-          ],
+          values: [CATEGORY_HEADERS, ...starting.categoryRows],
         },
-        { range: "Settings!A1", values: [SETTINGS_HEADERS, ["Currency", "INR"]] },
+        {
+          range: "Settings!A1",
+          values: [SETTINGS_HEADERS, ["Currency", starting.currency]],
+        },
       ],
     },
   });
@@ -163,7 +240,12 @@ async function findOrCreateYearFile(folder, year, name) {
 function formatColumn(column, numberFormat) {
   return {
     repeatCell: {
-      range: { sheetId: 0, startRowIndex: 1, startColumnIndex: column, endColumnIndex: column + 1 },
+      range: {
+        sheetId: 0,
+        startRowIndex: 1,
+        startColumnIndex: column,
+        endColumnIndex: column + 1,
+      },
       cell: { userEnteredFormat: { numberFormat } },
       fields: "userEnteredFormat.numberFormat",
     },

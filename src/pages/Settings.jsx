@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import LoadError from "../components/LoadError.jsx";
 import { getSpreadsheet, setFyStartMonth } from "../data/spreadsheet.js";
 import { getSettings, updateSettings } from "../data/store.js";
 import { getSession, signOut } from "../lib/auth.js";
@@ -26,9 +27,12 @@ function Settings() {
   // The theme is saved on this device, so it can be read straight away.
   const [theme, setTheme] = useState(getThemeChoice);
 
-  // Currency and financial year are saved with your data, which takes time to
-  // load (later from Google Sheets). null means "not loaded yet".
+  // The currency, from the Settings tab of your spreadsheet.
+  // null means "not loaded yet".
   const [settings, setSettings] = useState(null);
+  const [loadError, setLoadError] = useState(""); // loading settings failed
+  const [saveError, setSaveError] = useState(""); // saving a change failed
+  const [attempt, setAttempt] = useState(0); // changing it loads again
 
   // Your spreadsheet in Google Drive: { name, url, fyStartMonth, ... }.
   // Loaded separately, so the rest of the screen doesn't wait for Google.
@@ -37,11 +41,13 @@ function Settings() {
   const [switchingYear, setSwitchingYear] = useState(false);
 
   useEffect(() => {
-    getSettings().then(setSettings);
+    getSettings()
+      .then(setSettings)
+      .catch((problem) => setLoadError(problem.message));
     getSpreadsheet()
       .then(setSheet)
       .catch((problem) => setSheetError(problem.message));
-  }, []);
+  }, [attempt]);
 
   function chooseTheme(choice) {
     setTheme(choice); // update the control on screen
@@ -72,15 +78,32 @@ function Settings() {
   }
 
   // changes is part of the settings, e.g. { currency: "USD" }.
-  function changeSettings(changes) {
+  async function changeSettings(changes) {
+    const before = settings;
     setSettings({ ...settings, ...changes }); // show it straight away
-    updateSettings(changes); // and save it
+    setSaveError("");
+    try {
+      await updateSettings(changes); // and save it in your sheet
+    } catch (problem) {
+      setSettings(before); // saving failed: put the control back
+      setSaveError(problem.message);
+    }
   }
 
   if (settings === null) {
     return (
       <div className="page">
-        <p className="muted">Loading…</p>
+        {loadError ? (
+          <LoadError
+            message={loadError}
+            onRetry={() => {
+              setLoadError("");
+              setAttempt((count) => count + 1);
+            }}
+          />
+        ) : (
+          <p className="muted">Loading…</p>
+        )}
       </div>
     );
   }
@@ -174,6 +197,12 @@ function Settings() {
           </div>
         </div>
       </section>
+
+      {saveError && (
+        <p className="form-error" role="alert">
+          {saveError}
+        </p>
+      )}
 
       <section className="settings-group">
         <h2 className="settings-heading">Account</h2>

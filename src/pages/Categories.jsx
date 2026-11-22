@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import LoadError from "../components/LoadError.jsx";
 import {
   CATEGORY_COLORS,
   addCategory,
@@ -19,15 +20,29 @@ function Categories() {
   const [name, setName] = useState("");
   const [color, setColor] = useState(null); // null = "use the suggested color"
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [attempt, setAttempt] = useState(0); // changing it loads again
 
   useEffect(() => {
-    getCategories().then(setCategories);
-  }, []);
+    getCategories()
+      .then(setCategories)
+      .catch((problem) => setLoadError(problem.message));
+  }, [attempt]);
 
   if (categories === null) {
     return (
       <div className='page'>
-        <p className='muted'>Loading…</p>
+        {loadError ? (
+          <LoadError
+            message={loadError}
+            onRetry={() => {
+              setLoadError("");
+              setAttempt((count) => count + 1);
+            }}
+          />
+        ) : (
+          <p className='muted'>Loading…</p>
+        )}
       </div>
     );
   }

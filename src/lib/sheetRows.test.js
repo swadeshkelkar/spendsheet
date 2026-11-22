@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  categoryToRow,
   expenseToRow,
   isoToSerial,
   parseAmount,
   parseDate,
   rowToExpense,
+  rowsToCategories,
+  rowsToSettings,
   serialToISO,
 } from "./sheetRows.js";
 
@@ -109,5 +112,75 @@ describe("expenseToRow", () => {
       "Dinner",
       "2026-10-30T09:00:00Z",
     ]);
+  });
+});
+
+describe("rowsToCategories", () => {
+  const colors = ["teal", "blue", "gray"];
+
+  it("reads rows the app wrote", () => {
+    const rows = [
+      ["food", "Food", "teal", "TRUE"],
+      ["bills", "Bills", "blue", "FALSE"],
+      ["other", "Other", "gray", "TRUE"],
+    ];
+    expect(rowsToCategories(rows, colors)).toEqual([
+      { id: "food", name: "Food", color: "teal", active: true },
+      { id: "bills", name: "Bills", color: "blue", active: false },
+      { id: "other", name: "Other", color: "gray", active: true },
+    ]);
+  });
+
+  it("accepts a row with only a name, typed by hand", () => {
+    const [pets] = rowsToCategories([["", " Pet care "]], colors);
+    expect(pets).toEqual({ id: "pet-care", name: "Pet care", color: "gray", active: true });
+  });
+
+  it("reads a FALSE typed into the sheet", () => {
+    expect(rowsToCategories([["a", "A", "teal", false]], colors)[0].active).toBe(false);
+  });
+
+  it("skips rows without a name, and repeated names", () => {
+    const rows = [["x", "", "teal"], ["f1", "Food"], ["f2", "food"]];
+    const names = rowsToCategories(rows, colors).map((category) => category.id);
+    expect(names).toEqual(["f1", "other"]);
+  });
+
+  it("keeps IDs unique", () => {
+    const rows = [["", "Eating out"], ["", "Eating-out!"]];
+    const ids = rowsToCategories(rows, colors).map((category) => category.id);
+    expect(ids).toEqual(["eating-out", "eating-out-2", "other"]);
+  });
+
+  it("always has an active Other, last", () => {
+    const rows = [["other", "Other", "gray", "FALSE"], ["food", "Food"]];
+    const result = rowsToCategories(rows, colors);
+    expect(result.map((category) => category.id)).toEqual(["food", "other"]);
+    expect(result[1].active).toBe(true);
+    expect(rowsToCategories([], colors)).toEqual([
+      { id: "other", name: "Other", color: "gray", active: true },
+    ]);
+  });
+});
+
+describe("categoryToRow", () => {
+  it("writes Active as text", () => {
+    const category = { id: "food", name: "Food", color: "teal", active: false };
+    expect(categoryToRow(category)).toEqual(["food", "Food", "teal", "FALSE"]);
+  });
+});
+
+describe("rowsToSettings", () => {
+  const defaults = { currency: "INR" };
+
+  it("reads the currency, in any case", () => {
+    expect(rowsToSettings([["currency", " usd "]], defaults, ["INR", "USD"])).toEqual({
+      currency: "USD",
+    });
+  });
+
+  it("keeps the default for an unknown currency or an empty tab", () => {
+    expect(rowsToSettings([["Currency", "XYZ"]], defaults, ["INR"])).toEqual(defaults);
+    expect(rowsToSettings([], defaults, ["INR"])).toEqual(defaults);
   });
 });

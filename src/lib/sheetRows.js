@@ -120,3 +120,89 @@ export function expenseToRow(expense, categories) {
     expense.createdAt,
   ];
 }
+
+// ---------- The Categories tab ----------
+//
+//   ID | Name | Color | Active
+//
+// Only the name is required, so you can add a category in the sheet by typing
+// just a name. The ID is then made from the name, an unknown color becomes
+// gray, and a blank Active counts as active.
+
+// "Eating out" → "eating-out". Lowercase letters and digits, joined by "-".
+export function slugify(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-") // anything else becomes "-"
+    .replace(/^-|-$/g, ""); // no "-" at the start or end
+}
+
+// An ID that isn't taken yet: "gifts", then "gifts-2", "gifts-3", ...
+export function uniqueId(base, categories) {
+  let id = base || "category"; // e.g. a name with no a–z letters
+  let number = 2;
+  while (categories.some((category) => category.id === id)) {
+    id = `${base || "category"}-${number}`;
+    number += 1;
+  }
+  return id;
+}
+
+// FALSE, "false", "no", "0" mean inactive. Anything else, even blank, is active.
+// (A FALSE typed into a sheet arrives as the boolean false; ours is text.)
+function isActive(value) {
+  if (typeof value === "boolean") return value;
+  const text = String(value ?? "").trim().toLowerCase();
+  return !["false", "no", "0"].includes(text);
+}
+
+// Rows of the Categories tab (without the header) → a list of categories.
+// "Other" is always there, always active, and last.
+export function rowsToCategories(rows, colors) {
+  const categories = [];
+  for (const [id, name, color, active] of rows) {
+    const cleanName = String(name ?? "").trim();
+    if (cleanName === "") continue; // no name: not a category
+    const lowerName = cleanName.toLowerCase();
+    if (categories.some((category) => category.name.toLowerCase() === lowerName)) {
+      continue; // the same name twice: the first one wins
+    }
+    const cleanColor = String(color ?? "").trim().toLowerCase();
+    categories.push({
+      id: uniqueId(String(id ?? "").trim() || slugify(cleanName), categories),
+      name: cleanName,
+      color: colors.includes(cleanColor) ? cleanColor : "gray",
+      active: isActive(active),
+    });
+  }
+
+  // Other: take it out wherever it is (or make it), then put it at the end.
+  const found = categories.find((category) => category.id === "other");
+  const others = categories.filter((category) => category.id !== "other");
+  others.push({ ...(found || { id: "other", name: "Other", color: "gray" }), active: true });
+  return others;
+}
+
+// A category → a row to write.
+export function categoryToRow(category) {
+  return [category.id, category.name, category.color, category.active ? "TRUE" : "FALSE"];
+}
+
+// ---------- The Settings tab ----------
+//
+//   Setting | Value
+//   Currency | INR
+
+// Rows of the Settings tab (without the header) → { currency }.
+// Unknown settings are ignored, and an unknown currency keeps the default.
+export function rowsToSettings(rows, defaults, currencyCodes) {
+  const settings = { ...defaults };
+  for (const [key, value] of rows) {
+    const name = String(key ?? "").trim().toLowerCase();
+    const code = String(value ?? "").trim().toUpperCase();
+    if (name === "currency" && currencyCodes.includes(code)) {
+      settings.currency = code;
+    }
+  }
+  return settings;
+}
