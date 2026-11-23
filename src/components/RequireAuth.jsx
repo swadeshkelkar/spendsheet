@@ -1,14 +1,22 @@
 import { Navigate } from "react-router-dom";
-import { getSession } from "../lib/auth.js";
+import { getSavedSession } from "../lib/auth.js";
+import SessionBar from "./SessionBar.jsx";
 
 // Wrap a screen in this to make it sign-in only:
 //   <RequireAuth><History /></RequireAuth>
-// Signed in: shows the screen. Signed out (or the token ran out): goes to Welcome.
+// Never signed in, or signed out: goes to Welcome.
+// Signed in, even if the sign-in has expired: shows the screen, with the
+// session bar on top (it only appears once the sign-in has expired).
 function RequireAuth({ children }) {
-  if (getSession() === null) {
+  if (getSavedSession() === null) {
     return <Navigate to="/welcome" replace />;
   }
-  return children;
+  return (
+    <>
+      <SessionBar />
+      {children}
+    </>
+  );
 }
 
 export default RequireAuth;

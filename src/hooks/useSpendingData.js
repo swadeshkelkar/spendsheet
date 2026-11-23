@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getExpenses } from "../data/expenses.js";
+import { getSpreadsheet } from "../data/spreadsheet.js";
 import { getCategories, getSettings } from "../data/store.js";
 
 // A custom hook: a function that uses React's hooks, so screens can share it.
@@ -7,7 +8,8 @@ import { getCategories, getSettings } from "../data/store.js";
 // back to the app, so changes you made in the spreadsheet appear.
 //
 // Returns { data, error, retry }:
-//   data:  { expenses, categories, currency }, or null until the first load
+//   data:  { expenses, categories, currency, sheet }, or null until the first load
+//          (sheet is this year's spreadsheet: { year, fyStartMonth, ... })
 //   error: a message if the last load failed, otherwise ""
 //   retry: a function that loads again (for a "Try again" button)
 export function useSpendingData() {
@@ -22,10 +24,11 @@ export function useSpendingData() {
     let active = true;
 
     function load() {
-      Promise.all([getExpenses(), getCategories(), getSettings()])
-        .then(([expenses, categories, settings]) => {
+      // getSpreadsheet() is remembered after the first time, so it's instant here.
+      Promise.all([getExpenses(), getCategories(), getSettings(), getSpreadsheet()])
+        .then(([expenses, categories, settings, sheet]) => {
           if (!active) return;
-          setData({ expenses, categories, currency: settings.currency });
+          setData({ expenses, categories, currency: settings.currency, sheet });
           setError("");
         })
         .catch((problem) => {

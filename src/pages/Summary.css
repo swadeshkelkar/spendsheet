@@ -129,3 +129,17 @@
   height: 100%;
   border-radius: 3px;
 }
+
+/* "FY 2026-27 so far" */
+.fy-card {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fy-total {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+}

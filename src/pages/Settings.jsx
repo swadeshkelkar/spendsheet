@@ -4,7 +4,7 @@ import Icon from "../components/Icon.jsx";
 import LoadError from "../components/LoadError.jsx";
 import { getSpreadsheet, setFyStartMonth } from "../data/spreadsheet.js";
 import { getSettings, updateSettings } from "../data/store.js";
-import { getSession, signOut } from "../lib/auth.js";
+import { getSavedSession, onSessionEvent, signOut } from "../lib/auth.js";
 import { CURRENCIES, currencySymbol } from "../lib/money.js";
 import { getThemeChoice, setThemeChoice } from "../lib/theme.js";
 import "./Settings.css";
@@ -48,6 +48,16 @@ function Settings() {
       .then(setSheet)
       .catch((problem) => setSheetError(problem.message));
   }, [attempt]);
+
+  // After "Continue" on the session bar, load again (clears any error).
+  useEffect(
+    () =>
+      onSessionEvent("restored", () => {
+        setSheetError("");
+        setAttempt((count) => count + 1);
+      }),
+    [],
+  );
 
   function chooseTheme(choice) {
     setTheme(choice); // update the control on screen
@@ -236,8 +246,8 @@ function Settings() {
           <div className="setting setting-row">
             <div>
               <div className="setting-title">Google account</div>
-              {/* ?. because the session could run out while this screen is open */}
-              <div className="setting-hint">{getSession()?.email}</div>
+              {/* Saved session: the email still shows while the sign-in is expired. */}
+              <div className="setting-hint">{getSavedSession()?.email}</div>
             </div>
             <button type="button" className="signout-button" onClick={handleSignOut}>
               Sign out

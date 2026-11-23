@@ -9,10 +9,16 @@
 // not by name, so renaming or moving them in Drive doesn't confuse the app.
 // And with the drive.file permission, Drive only ever shows us files we made.
 
-import { todayISO } from "../lib/dates.js";
+import { monthKey, todayISO } from "../lib/dates.js";
 import { getFinancialYear, sheetFileName } from "../lib/financialYear.js";
 import { getSession } from "../lib/auth.js";
 import { googleFetch } from "../lib/google.js";
+import {
+  monthTabFormula,
+  monthTabId,
+  monthTabIndex,
+  monthTabTitle,
+} from "../lib/monthTabs.js";
 import { CURRENCIES } from "../lib/money.js";
 import {
   categoryToRow,
@@ -237,11 +243,12 @@ async function findOrCreateYearFile(folder, year, name) {
 
 // A number format for one column of the Expenses tab (column 0 is A), from
 // row 2 down. No end row means "to the bottom".
-function formatColumn(column, numberFormat) {
+// sheetId says which tab; 0 is Expenses.
+function formatColumn(column, numberFormat, sheetId = 0) {
   return {
     repeatCell: {
       range: {
-        sheetId: 0,
+        sheetId,
         startRowIndex: 1,
         startColumnIndex: column,
         endColumnIndex: column + 1,
@@ -329,11 +336,90 @@ export async function setFyStartMonth(month) {
 }
 
 // The internal number of a tab (needed to delete rows), found by its name.
-export async function getTabId(spreadsheetId, title) {
+// Every tab in a spreadsheet: [{ sheetId, title, index }, ...]
+async function getTabs(spreadsheetId) {
   const result = await googleFetch(
-    `${SHEETS}/${spreadsheetId}?fields=sheets.properties(sheetId,title)`,
+    `${SHEETS}/${spreadsheetId}?fields=sheets.properties(sheetId,title,index)`,
   );
-  const tab = result.sheets.find((sheet) => sheet.properties.title === title);
+  return result.sheets.map((sheet) => sheet.properties);
+}
+
+// The internal number of a tab (needed to delete rows), found by its name.
+export async function getTabId(spreadsheetId, title) {
+  const tab = (await getTabs(spreadsheetId)).find((item) => item.title === title);
   if (!tab) throw new Error(`Your spreadsheet has no "${title}" tab.`);
-  return tab.properties.sheetId;
+  return tab.sheetId;
+}
+
+// ---------- Monthly view tabs ----------
+
+// Months already checked, e.g. "<spreadsheet id>:2026-11", so adding more
+// expenses in a month doesn't ask the sheet about its tab every time.
+const checkedMonths = new Set();
+
+// Makes sure the month a date is in has its view tab ("Nov 2026").
+export async function ensureMonthTab(spreadsheetId, isoDate) {
+  const key = monthKey(isoDate);
+  const remembered = `${spreadsheetId}:${key}`;
+  if (checkedMonths.has(remembered)) return;
+
+  const tabs = await getTabs(spreadsheetId);
+  const title = monthTabTitle(key);
+  if (!tabs.some((tab) => tab.title === title)) {
+    const sheetId = monthTabId(key);
+
+    // 1. The tab, in its place among the months, with a bold frozen header,
+    //    dates in column A, amounts in column B, and the total in G1.
+    await googleFetch(`${SHEETS}/${spreadsheetId}:batchUpdate`, {
+      method: "POST",
+      body: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                sheetId,
+                title,
+                index: monthTabIndex(tabs, key),
+                gridProperties: { frozenRowCount: 1 },
+              },
+            },
+          },
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1 },
+              cell: { userEnteredFormat: { textFormat: { bold: true } } },
+              fields: "userEnteredFormat.textFormat.bold",
+            },
+          },
+          formatColumn(0, { type: "DATE", pattern: "dd mmm yyyy" }, sheetId),
+          formatColumn(1, { type: "NUMBER", pattern: "#,##0.00" }, sheetId),
+          {
+            repeatCell: {
+              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 6, endColumnIndex: 7 },
+              cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } },
+              fields: "userEnteredFormat.numberFormat",
+            },
+          },
+        ],
+      },
+    });
+
+    // 2. The header, the total, and the formula. "USER_ENTERED" makes Sheets
+    //    treat text starting with "=" as a formula, as if you'd typed it.
+    //    The quotes in 'Nov 2026'!A1 are needed because the name has a space.
+    await googleFetch(`${SHEETS}/${spreadsheetId}/values:batchUpdate`, {
+      method: "POST",
+      body: {
+        valueInputOption: "USER_ENTERED",
+        data: [
+          {
+            range: `'${title}'!A1`,
+            values: [["Date", "Amount", "Category", "Note", "", "Total", "=SUM(B2:B)"]],
+          },
+          { range: `'${title}'!A2`, values: [[monthTabFormula(key)]] },
+        ],
+      },
+    });
+  }
+  checkedMonths.add(remembered);
 }

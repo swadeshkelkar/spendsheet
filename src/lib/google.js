@@ -2,7 +2,9 @@
 // It adds the user's token, turns the reply into an object, and turns
 // Google's errors into readable messages.
 
-import { getSession, signOut } from "./auth.js";
+import { expireSession, getSavedSession, getSession } from "./auth.js";
+
+const EXPIRED = "Your sign-in has expired. Tap Continue at the top to carry on.";
 
 // googleFetch(url)                          → reads something (GET)
 // googleFetch(url, { method: "POST", body }) → changes something
@@ -10,7 +12,11 @@ import { getSession, signOut } from "./auth.js";
 export async function googleFetch(url, { method = "GET", body } = {}) {
   const session = getSession();
   if (session === null) {
-    throw new Error("You've been signed out. Please sign in again.");
+    if (getSavedSession() === null) {
+      throw new Error("You've been signed out. Please sign in again.");
+    }
+    expireSession(); // the token ran out: show the "Continue" bar
+    throw new Error(EXPIRED);
   }
 
   const response = await fetch(url, {
@@ -24,8 +30,8 @@ export async function googleFetch(url, { method = "GET", body } = {}) {
 
   // 401 means Google no longer accepts the token (expired or withdrawn).
   if (response.status === 401) {
-    signOut();
-    throw new Error("Your sign-in has expired. Please sign in again.");
+    expireSession();
+    throw new Error(EXPIRED);
   }
 
   // Google answers with JSON, even for errors. Some replies are empty.

@@ -123,3 +123,33 @@ select {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* "Your sign-in has expired · Continue", fixed at the top, over everything */
+.session-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--hero-bg);
+  color: var(--hero-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.session-bar button {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-weight: 600;
+  cursor: pointer;
+}

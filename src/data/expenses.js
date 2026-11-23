@@ -10,6 +10,7 @@ import { googleFetch } from "../lib/google.js";
 import { expenseToRow, rowToExpense } from "../lib/sheetRows.js";
 import {
   SHEETS,
+  ensureMonthTab,
   getSpreadsheet,
   getSpreadsheetForDate,
   getTabId,
@@ -30,6 +31,14 @@ function valuesUrl(spreadsheetId, range) {
 
 function newId() {
   return crypto.randomUUID();
+}
+
+// Adds the month's view tab if it's missing. Not waited for: the expense is
+// already saved, so a problem here only means the tab appears another time.
+function addMonthTab(spreadsheetId, isoDate) {
+  ensureMonthTab(spreadsheetId, isoDate).catch((problem) => {
+    console.warn("Couldn't add the month's tab:", problem.message);
+  });
 }
 
 // Every row of the Expenses tab, including the header, as arrays of cells.
@@ -143,6 +152,7 @@ export async function addExpense(input) {
   };
   const sheet = await getSpreadsheetForDate(expense.date);
   await appendRow(sheet.id, expenseToRow(expense, categories));
+  addMonthTab(sheet.id, expense.date);
   return expense;
 }
 
@@ -166,6 +176,7 @@ export async function updateExpense(id, changes) {
     await appendRow(target.id, row);
     await deleteRow(sheet.id, rowNumber);
   }
+  addMonthTab(target.id, updated.date); // the date may now be in a new month
   return updated;
 }
 

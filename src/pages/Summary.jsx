@@ -3,6 +3,7 @@ import Icon from "../components/Icon.jsx";
 import LoadError from "../components/LoadError.jsx";
 import { useSpendingData } from "../hooks/useSpendingData.js";
 import { monthKey, monthLabel, shiftMonth, todayISO } from "../lib/dates.js";
+import { fyFirstMonth } from "../lib/financialYear.js";
 import { formatMoney } from "../lib/money.js";
 import { byCategory, inMonth, total } from "../lib/summary.js";
 import "./Summary.css";
@@ -26,7 +27,7 @@ function Summary() {
     );
   }
 
-  const { expenses, categories, currency } = data;
+  const { expenses, categories, currency, sheet } = data;
 
   // Everything below is worked out from state on every draw.
   const monthExpenses = inMonth(expenses, month);
@@ -46,6 +47,11 @@ function Summary() {
 
   const isCurrentMonth = month === thisMonth;
 
+  // This year's file only has this financial year, so stop at its first month.
+  // (Earlier months are in last year's file: open it from Drive.)
+  const firstMonth = fyFirstMonth(todayISO(), sheet.fyStartMonth); // e.g. "2026-04"
+  const isFirstMonth = month === firstMonth;
+
   return (
     <div className="page">
       <h1 className="page-title">Summary</h1>
@@ -57,6 +63,7 @@ function Summary() {
           type="button"
           className="month-button"
           aria-label="Previous month"
+          disabled={isFirstMonth} // last year is in another file
           onClick={() => setMonth(shiftMonth(month, -1))}
         >
           <Icon name="back" size={18} />
@@ -136,6 +143,15 @@ function Summary() {
           </div>
         )}
       </section>
+
+      {/* The whole financial year so far: every expense in this year's file. */}
+      <div className="card fy-card">
+        <div>
+          <div className="muted total-label">{sheet.year} so far</div>
+          <div className="fy-total">{formatMoney(total(expenses), currency)}</div>
+        </div>
+        <div className="muted total-label">{expenses.length} expenses</div>
+      </div>
     </div>
   );
 }

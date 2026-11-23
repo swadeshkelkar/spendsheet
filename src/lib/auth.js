@@ -41,24 +41,53 @@ export function loadGoogleLibrary() {
 
 // ---------- The saved session ----------
 
-// The current session, or null if signed out or the token has run out.
+// The saved session, even if its token has run out, or null if signed out.
 // A session looks like: { token: "ya29…", expiresAt: 1793520000000, email: "…" }
-export function getSession() {
+// "Signed in but expired" still counts as signed in: the app keeps your place
+// and asks you to tap Continue, instead of sending you back to Welcome.
+export function getSavedSession() {
   try {
-    const session = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    // Treat it as expired a minute early, so a request never starts with a
-    // token that runs out halfway.
-    if (session && session.expiresAt - 60 * 1000 > Date.now()) {
-      return session;
-    }
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)); // null if nothing saved
   } catch {
-    // Missing or damaged: same as signed out.
+    return null; // damaged: same as signed out
+  }
+}
+
+// The session if its token still works, otherwise null.
+export function getSession() {
+  const session = getSavedSession();
+  // Treat it as expired a minute early, so a request never starts with a
+  // token that runs out halfway.
+  if (session && session.expiresAt - 60 * 1000 > Date.now()) {
+    return session;
   }
   return null;
 }
 
 export function signOut() {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+// ---------- Telling the app when sign-in expires or comes back ----------
+// An EventTarget is the browser's built-in "noticeboard": code can post an
+// event on it, and anything listening hears about it. The session bar listens
+// for "expired"; screens listen for "restored" to load again.
+const sessionEvents = new EventTarget();
+
+// Marks the saved token as used up (keeping the email), and tells listeners.
+export function expireSession() {
+  const session = getSavedSession();
+  if (session) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...session, expiresAt: 0 }));
+  }
+  sessionEvents.dispatchEvent(new Event("expired"));
+}
+
+// onSessionEvent("expired", listener) or onSessionEvent("restored", listener).
+// Returns a function that stops listening, handy as a useEffect cleanup.
+export function onSessionEvent(name, listener) {
+  sessionEvents.addEventListener(name, listener);
+  return () => sessionEvents.removeEventListener(name, listener);
 }
 
 // ---------- Signing in ----------
@@ -111,6 +140,7 @@ export function signIn() {
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
           localStorage.setItem(LAST_EMAIL_KEY, email);
+          sessionEvents.dispatchEvent(new Event("restored"));
           resolve(session);
         } catch (problem) {
           reject(problem);

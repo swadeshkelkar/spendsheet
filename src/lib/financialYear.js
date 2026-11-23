@@ -54,3 +54,12 @@ export function sheetFileName(isoDate, startMonth) {
   const financialYear = getFinancialYear(isoDate, startMonth);
   return `Spendsheet ${financialYear}`;
 }
+
+// The first month of the financial year a date falls in, as a month key:
+// fyFirstMonth("2026-11-23", 4) → "2026-04", fyFirstMonth("2027-02-01", 4) → "2026-04".
+// (Added in step 13d, so the Summary screen knows where this year's file starts.)
+export function fyFirstMonth(isoDate, startMonth) {
+  const [year, month] = isoDate.split("-").map(Number);
+  const startYear = month < startMonth ? year - 1 : year;
+  return `${startYear}-${String(startMonth).padStart(2, "0")}`;
+}
