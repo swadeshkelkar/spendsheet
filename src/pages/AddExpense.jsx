@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import Icon from "../components/Icon.jsx";
 import LoadError from "../components/LoadError.jsx";
 import {
   addExpense,
   deleteExpense,
   getExpenses,
+  getExpensesFromSheet,
   updateExpense,
 } from "../data/expenses.js";
 import { getCategories, getSettings } from "../data/store.js";
-import { todayISO } from "../lib/dates.js";
+import { monthKey, todayISO } from "../lib/dates.js";
 import { currencySymbol, formatAmountInput, pressKey } from "../lib/money.js";
 import "./AddExpense.css";
 
@@ -20,6 +27,10 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"];
 function AddExpense() {
   const navigate = useNavigate(); // lets us change screens from code
   const { id } = useParams(); // the ":id" part of /edit/:id, or undefined on /add
+  // Which year's file the expense is in: /edit/abc?sheet=<file id>.
+  // undefined (say, an old link) means this year's file.
+  const [searchParams] = useSearchParams();
+  const sheetId = searchParams.get("sheet") || undefined;
   const isEditing = id !== undefined;
   // Coming back from the Categories screen, the half-filled form is in here.
   const draft = useLocation().state?.draft;
@@ -45,7 +56,11 @@ function AddExpense() {
   // Load categories. When editing, also find the expense and fill in the form.
   useEffect(() => {
     // Expenses are only needed when editing; adding skips that trip to Google.
-    Promise.all([getCategories(), id ? getExpenses() : [], getSettings()])
+    Promise.all([
+      getCategories(),
+      id ? (sheetId ? getExpensesFromSheet(sheetId) : getExpenses()) : [],
+      getSettings(),
+    ])
       .then(([categoryList, expenseList, settings]) => {
         setCurrency(settings.currency);
 
@@ -81,7 +96,7 @@ function AddExpense() {
         setLoadError(problem.message);
         setStatus("failed");
       });
-  }, [id, attempt]); // run again for a different expense, or on "Try again"
+  }, [id, sheetId, attempt]); // again for a different expense, or on "Try again"
 
   // On a computer, let the number keys and Backspace work like the keypad.
   useEffect(() => {
@@ -114,11 +129,12 @@ function AddExpense() {
 
     try {
       if (isEditing) {
-        await updateExpense(id, input);
+        await updateExpense(id, input, sheetId);
       } else {
         await addExpense(input);
       }
-      navigate("/history");
+      // Show the month the expense is in (its date may be in another month).
+      navigate(`/history?month=${monthKey(date)}`);
     } catch (problem) {
       setError(problem.message); // e.g. the expense was deleted meanwhile
       setSaving(false);
@@ -130,8 +146,8 @@ function AddExpense() {
     if (!window.confirm("Delete this expense?")) return;
 
     try {
-      await deleteExpense(id);
-      navigate("/history");
+      await deleteExpense(id, sheetId);
+      navigate(`/history?month=${monthKey(date)}`);
     } catch (problem) {
       setError(problem.message);
     }

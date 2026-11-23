@@ -8,12 +8,14 @@
 
 import { googleFetch } from "../lib/google.js";
 import { expenseToRow, rowToExpense } from "../lib/sheetRows.js";
+import { inMonth } from "../lib/summary.js";
 import {
   SHEETS,
   ensureMonthTab,
   getSpreadsheet,
   getSpreadsheetForDate,
   getTabId,
+  getYearFiles,
 } from "./spreadsheet.js";
 import { getCategories } from "./store.js";
 
@@ -51,26 +53,44 @@ async function readRows(spreadsheetId) {
 
 // ---------- Reading ----------
 
-// This financial year's expenses.
+// All the expenses in one year's file. Each one also remembers which file it
+// came from (spreadsheetId), so editing or deleting it changes the right one.
 //
-// If a load is already running, everyone asking gets that same one instead of
-// starting another. Two loads at once would each give hand-typed rows a
-// different new ID, and the second write would undo the first.
-let loading = null;
+// If a load of that file is already running, everyone asking gets that same
+// one instead of starting another. Two loads at once would each give
+// hand-typed rows a different new ID, and the second write would undo the first.
+const loading = new Map(); // spreadsheet id → promise
 
-export function getExpenses() {
-  if (loading === null) {
+export function getExpensesFromSheet(spreadsheetId) {
+  if (!loading.has(spreadsheetId)) {
     // finally runs when it's done, whether it worked or not.
-    loading = loadExpenses().finally(() => {
-      loading = null;
+    const promise = loadExpenses(spreadsheetId).finally(() => {
+      loading.delete(spreadsheetId);
     });
+    loading.set(spreadsheetId, promise);
   }
-  return loading;
+  return loading.get(spreadsheetId);
 }
 
-async function loadExpenses() {
-  const [sheet, categories] = await Promise.all([getSpreadsheet(), getCategories()]);
-  const rows = await readRows(sheet.id);
+// This financial year's expenses (used by Summary).
+export async function getExpenses() {
+  const sheet = await getSpreadsheet();
+  return getExpensesFromSheet(sheet.id);
+}
+
+// One month's expenses, e.g. getExpensesForMonth("2026-03"), from whichever
+// file has that month. Usually one file; two if you switched between April
+// and January years and both cover it. No file means no expenses.
+export async function getExpensesForMonth(key) {
+  const files = await getYearFiles();
+  const covering = files.filter((file) => file.first <= key && key <= file.last);
+  const lists = await Promise.all(covering.map((file) => getExpensesFromSheet(file.id)));
+  return inMonth(lists.flat(), key); // flat: a list of lists → one list
+}
+
+async function loadExpenses(spreadsheetId) {
+  const categories = await getCategories();
+  const rows = await readRows(spreadsheetId);
 
   const expenses = [];
   const seenIds = new Set();
@@ -89,11 +109,11 @@ async function loadExpenses() {
       newIds.push({ range: `Expenses!A${index + 2}`, values: [[expense.id]] });
     }
     seenIds.add(expense.id);
-    expenses.push(expense);
+    expenses.push({ ...expense, spreadsheetId });
   });
 
   if (newIds.length > 0) {
-    await googleFetch(`${SHEETS}/${sheet.id}/values:batchUpdate`, {
+    await googleFetch(`${SHEETS}/${spreadsheetId}/values:batchUpdate`, {
       method: "POST",
       body: { valueInputOption: "RAW", data: newIds },
     });
@@ -156,33 +176,39 @@ export async function addExpense(input) {
   return expense;
 }
 
-// Changes an existing expense from this year's sheet.
-export async function updateExpense(id, changes) {
-  const [sheet, categories] = await Promise.all([getSpreadsheet(), getCategories()]);
-  const { rowNumber, expense } = await findExpense(sheet.id, id, categories);
+// The file to change: the one given, or this year's.
+async function sheetIdOr(spreadsheetId) {
+  return spreadsheetId || (await getSpreadsheet()).id;
+}
+
+// Changes an existing expense. spreadsheetId says which year's file it's in
+// (every loaded expense has one); without it, this year's file.
+export async function updateExpense(id, changes, spreadsheetId) {
+  const [sheetId, categories] = await Promise.all([sheetIdOr(spreadsheetId), getCategories()]);
+  const { rowNumber, expense } = await findExpense(sheetId, id, categories);
   const updated = { ...expense, ...changes };
   const row = expenseToRow(updated, categories);
 
   // The new date may be in a different financial year, which is a different file.
   const target = await getSpreadsheetForDate(updated.date);
-  if (target.id === sheet.id) {
+  if (target.id === sheetId) {
     await googleFetch(
-      `${valuesUrl(sheet.id, `Expenses!A${rowNumber}:F${rowNumber}`)}?valueInputOption=RAW`,
+      `${valuesUrl(sheetId, `Expenses!A${rowNumber}:F${rowNumber}`)}?valueInputOption=RAW`,
       { method: "PUT", body: { values: [row] } },
     );
   } else {
     // Move it: add it to that year's file first, then remove it here. In that
     // order, a failure halfway leaves a copy rather than losing the expense.
     await appendRow(target.id, row);
-    await deleteRow(sheet.id, rowNumber);
+    await deleteRow(sheetId, rowNumber);
   }
   addMonthTab(target.id, updated.date); // the date may now be in a new month
-  return updated;
+  return { ...updated, spreadsheetId: target.id };
 }
 
-// Removes an expense from this year's sheet, found by its ID.
-export async function deleteExpense(id) {
-  const [sheet, categories] = await Promise.all([getSpreadsheet(), getCategories()]);
-  const { rowNumber } = await findExpense(sheet.id, id, categories);
-  await deleteRow(sheet.id, rowNumber);
+// Removes an expense, found by its ID, from the file given (or this year's).
+export async function deleteExpense(id, spreadsheetId) {
+  const [sheetId, categories] = await Promise.all([sheetIdOr(spreadsheetId), getCategories()]);
+  const { rowNumber } = await findExpense(sheetId, id, categories);
+  await deleteRow(sheetId, rowNumber);
 }

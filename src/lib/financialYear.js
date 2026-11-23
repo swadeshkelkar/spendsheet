@@ -63,3 +63,20 @@ export function fyFirstMonth(isoDate, startMonth) {
   const startYear = month < startMonth ? year - 1 : year;
   return `${startYear}-${String(startMonth).padStart(2, "0")}`;
 }
+
+// The months a year's file covers, from its label (added in step 14):
+//   "FY 2025-26" → { first: "2025-04", last: "2026-03" }  (April to March)
+//   "2026"       → { first: "2026-01", last: "2026-12" }  (January to December)
+// Anything else → null.
+export function fyMonths(label) {
+  const april = label.match(/^FY (\d{4})-\d{2}$/);
+  if (april) {
+    const startYear = Number(april[1]);
+    return { first: `${startYear}-04`, last: `${startYear + 1}-03` };
+  }
+  const january = label.match(/^(\d{4})$/);
+  if (january) {
+    return { first: `${january[1]}-01`, last: `${january[1]}-12` };
+  }
+  return null;
+}

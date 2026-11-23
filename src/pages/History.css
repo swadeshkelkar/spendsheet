@@ -114,3 +114,24 @@
   font-size: 16px;
   font-weight: 700;
 }
+
+/* [March ▾] [2026 ▾] */
+.month-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.month-picker select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.month-picker select:first-child {
+  flex: 1; /* the month takes the room; the year stays compact */
+}

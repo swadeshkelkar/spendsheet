@@ -10,8 +10,8 @@
 // And with the drive.file permission, Drive only ever shows us files we made.
 
 import { monthKey, todayISO } from "../lib/dates.js";
-import { getFinancialYear, sheetFileName } from "../lib/financialYear.js";
-import { getSession } from "../lib/auth.js";
+import { fyMonths, getFinancialYear, sheetFileName } from "../lib/financialYear.js";
+import { getSavedSession } from "../lib/auth.js";
 import { googleFetch } from "../lib/google.js";
 import {
   monthTabFormula,
@@ -266,12 +266,14 @@ function formatColumn(column, numberFormat, sheetId = 0) {
 // they finish. Everything is per person: a new sign-in starts afresh.
 //   folder: the lookup of the Spendsheet folder
 //   years:  one lookup per year's file, e.g. "FY 2026-27" → promise
-let cache = null; // { email, folder, years }
+//   files:  the list of all yearly files (see getYearFiles)
+let cache = null; // { email, folder, years, files }
 
 function getCache() {
-  const email = getSession()?.email;
+  // The saved session, so the cache survives an expired sign-in.
+  const email = getSavedSession()?.email;
   if (cache === null || cache.email !== email) {
-    cache = { email, folder: null, years: new Map() };
+    cache = { email, folder: null, years: new Map(), files: null };
   }
   return cache;
 }
@@ -311,11 +313,50 @@ export async function getSpreadsheetForDate(isoDate) {
       fyStartMonth,
     }));
     current.years.set(year, promise);
+    // Finding a year's file may have created it, so list the files again next time.
+    promise.then(() => {
+      current.files = null;
+    });
     promise.catch(() => {
       if (current.years.get(year) === promise) current.years.delete(year);
     });
   }
   return current.years.get(year);
+}
+
+// All your yearly files, oldest first, with the months each one covers:
+// [{ id, name, year: "FY 2025-26", first: "2025-04", last: "2026-03" }, ...]
+// Used by History to know which months and years it can show.
+export function getYearFiles() {
+  const current = getCache();
+  if (current.files === null) {
+    const promise = listYearFiles();
+    current.files = promise;
+    promise.catch(() => {
+      if (current.files === promise) current.files = null;
+    });
+  }
+  return current.files;
+}
+
+async function listYearFiles() {
+  const folder = await getFolder();
+  const params = new URLSearchParams({
+    q: `'${folder.id}' in parents and mimeType = '${SPREADSHEET_TYPE}' and trashed = false`,
+    fields: "files(id, name, appProperties)",
+  });
+  const { files } = await googleFetch(`${DRIVE}?${params}`);
+
+  const yearFiles = [];
+  for (const file of files) {
+    const year = file.appProperties?.spendsheetYear;
+    const months = year ? fyMonths(year) : null; // null: not one of our year files
+    if (months) {
+      yearFiles.push({ id: file.id, name: file.name, year, ...months });
+    }
+  }
+  // Oldest first. localeCompare compares text: "2025-04" before "2026-04".
+  return yearFiles.sort((a, b) => a.first.localeCompare(b.first));
 }
 
 // This financial year's spreadsheet.

@@ -2,7 +2,12 @@
 // They all fail until you write the code. Run  npm test  and make them pass.
 
 import { describe, expect, it } from "vitest";
-import { fyFirstMonth, getFinancialYear, sheetFileName } from "./financialYear.js";
+import {
+  fyFirstMonth,
+  fyMonths,
+  getFinancialYear,
+  sheetFileName,
+} from "./financialYear.js";
 
 describe("getFinancialYear, April start (India)", () => {
   it("April to December belong to the year that started that April", () => {
@@ -45,5 +50,17 @@ describe("fyFirstMonth", () => {
     expect(fyFirstMonth("2027-02-01", 4)).toBe("2026-04");
     expect(fyFirstMonth("2026-04-01", 4)).toBe("2026-04");
     expect(fyFirstMonth("2026-11-23", 1)).toBe("2026-01");
+  });
+});
+
+describe("fyMonths", () => {
+  it("knows the months each kind of file covers", () => {
+    expect(fyMonths("FY 2025-26")).toEqual({ first: "2025-04", last: "2026-03" });
+    expect(fyMonths("FY 2099-00")).toEqual({ first: "2099-04", last: "2100-03" });
+    expect(fyMonths("2026")).toEqual({ first: "2026-01", last: "2026-12" });
+  });
+
+  it("returns null for other labels", () => {
+    expect(fyMonths("Budget")).toBe(null);
   });
 });
