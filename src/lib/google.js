@@ -4,7 +4,8 @@
 
 import { expireSession, getSavedSession, getSession } from "./auth.js";
 
-const EXPIRED = "Your sign-in has expired. Tap Continue at the top to carry on.";
+const EXPIRED =
+  "Your sign-in has expired. Tap Continue at the top to carry on.";
 
 // googleFetch(url)                          → reads something (GET)
 // googleFetch(url, { method: "POST", body }) → changes something
@@ -38,7 +39,20 @@ export async function googleFetch(url, { method = "GET", body } = {}) {
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     // e.g. "Google Sheets API has not been used in project … or it is disabled"
-    throw new Error(data?.error?.message || `Google returned error ${response.status}.`);
+    throw new Error(
+      data?.error?.message || `Google returned error ${response.status}.`,
+    );
   }
   return data;
+}
+
+// A link to a Google page (a sheet, a Drive folder) that opens in the account
+// you signed in to Spendsheet with. Without it, Google uses the browser's
+// default account, which may be a different one, and says you have no access.
+// authuser=<email> is how Google's own sites choose the account.
+export function linkForAccount(url) {
+  const email = getSavedSession()?.email;
+  if (!email) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}authuser=${encodeURIComponent(email)}`;
 }

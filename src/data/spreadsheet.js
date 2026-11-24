@@ -10,7 +10,11 @@
 // And with the drive.file permission, Drive only ever shows us files we made.
 
 import { monthKey, todayISO } from "../lib/dates.js";
-import { fyMonths, getFinancialYear, sheetFileName } from "../lib/financialYear.js";
+import {
+  fyMonths,
+  getFinancialYear,
+  sheetFileName,
+} from "../lib/financialYear.js";
 import { getSavedSession } from "../lib/auth.js";
 import { googleFetch } from "../lib/google.js";
 import {
@@ -52,13 +56,27 @@ const SETTINGS_HEADERS = ["Setting", "Value"];
 
 // The first file matching a Drive search, or null.
 // `query` uses Drive's search language, e.g. "appProperties has { key='a' and value='b' }".
-async function findFile(query) {
+// inBin: true looks in the Bin (Drive's trash) instead.
+async function findFile(query, { inBin = false } = {}) {
   const params = new URLSearchParams({
-    q: `${query} and trashed = false`,
+    q: `${query} and trashed = ${inBin}`,
     fields: "files(id, name, appProperties)", // only what we need
   });
   const result = await googleFetch(`${DRIVE}?${params}`);
   return result.files[0] || null;
+}
+
+// Before creating a folder or file that seems to be missing, check the Bin.
+// If it's there, stop with a clear message instead of quietly starting a new,
+// empty one (which would look as if your expenses had disappeared).
+async function stopIfInBin(query, what) {
+  const binned = await findFile(query, { inBin: true });
+  if (binned) {
+    throw new Error(
+      `${what} "${binned.name}" is in the Bin in Google Drive. Restore it there ` +
+        "and try again (or delete it for good to start afresh).",
+    );
+  }
 }
 
 // Creates a file or folder in Drive and returns { id, name, appProperties }.
@@ -72,10 +90,10 @@ function createFile(details) {
 // ---------- The folder ----------
 
 async function findOrCreateFolder() {
-  const existing = await findFile(
-    "appProperties has { key='spendsheet' and value='folder' }",
-  );
+  const query = "appProperties has { key='spendsheet' and value='folder' }";
+  const existing = await findFile(query);
   if (existing) return existing;
+  await stopIfInBin(query, "Your folder");
 
   return createFile({
     name: "Spendsheet",
@@ -90,15 +108,16 @@ async function findOrCreateFolder() {
 // What a new year's file starts with: the categories and currency from your
 // latest file, so a new year doesn't make you set them up again. Your very
 // first file starts from the defaults.
-async function startingValues(folderId) {
+async function startingValues() {
   const defaults = {
     categoryRows: DEFAULT_CATEGORIES.map(categoryToRow),
     currency: DEFAULT_SETTINGS.currency,
   };
   try {
-    // Spreadsheets in our folder, newest first.
+    // Your yearly spreadsheets, newest first. Not only those in the folder:
+    // you may have moved one elsewhere in Drive.
     const params = new URLSearchParams({
-      q: `'${folderId}' in parents and mimeType = '${SPREADSHEET_TYPE}' and trashed = false`,
+      q: `mimeType = '${SPREADSHEET_TYPE}' and trashed = false`,
       orderBy: "createdTime desc",
       fields: "files(id, appProperties)",
     });
@@ -133,13 +152,17 @@ async function startingValues(folderId) {
 }
 
 async function findOrCreateYearFile(folder, year, name) {
-  const existing = await findFile(
-    `'${folder.id}' in parents and appProperties has { key='spendsheetYear' and value='${year}' }`,
-  );
+  // Searched in all of your Drive, not only in the folder: if you moved the
+  // file somewhere else, it's still found instead of a new one being made.
+  // (With the drive.file permission, Drive only shows files Spendsheet made,
+  // so this never finds anyone else's spreadsheets.)
+  const query = `appProperties has { key='spendsheetYear' and value='${year}' }`;
+  const existing = await findFile(query);
   if (existing) return existing;
+  await stopIfInBin(query, "Your file");
 
   // Read these before creating the new file, or it would be the "latest" one.
-  const starting = await startingValues(folder.id);
+  const starting = await startingValues();
 
   // 1. An empty spreadsheet inside our folder, labelled with its year.
   const file = await createFile({
@@ -313,10 +336,15 @@ export async function getSpreadsheetForDate(isoDate) {
       fyStartMonth,
     }));
     current.years.set(year, promise);
-    // Finding a year's file may have created it, so list the files again next time.
-    promise.then(() => {
-      current.files = null;
-    });
+    // Finding a year's file may have created it, so list the files again next
+    // time. then() takes a second function for when it fails: without it,
+    // that failure would also surface here as an "unhandled" error.
+    promise.then(
+      () => {
+        current.files = null;
+      },
+      () => {}, // failed: nothing to do here (the catch below handles it)
+    );
     promise.catch(() => {
       if (current.years.get(year) === promise) current.years.delete(year);
     });
@@ -340,9 +368,9 @@ export function getYearFiles() {
 }
 
 async function listYearFiles() {
-  const folder = await getFolder();
+  // All of your Spendsheet spreadsheets, wherever they are in your Drive.
   const params = new URLSearchParams({
-    q: `'${folder.id}' in parents and mimeType = '${SPREADSHEET_TYPE}' and trashed = false`,
+    q: `mimeType = '${SPREADSHEET_TYPE}' and trashed = false`,
     fields: "files(id, name, appProperties)",
   });
   const { files } = await googleFetch(`${DRIVE}?${params}`);
@@ -387,7 +415,9 @@ async function getTabs(spreadsheetId) {
 
 // The internal number of a tab (needed to delete rows), found by its name.
 export async function getTabId(spreadsheetId, title) {
-  const tab = (await getTabs(spreadsheetId)).find((item) => item.title === title);
+  const tab = (await getTabs(spreadsheetId)).find(
+    (item) => item.title === title,
+  );
   if (!tab) throw new Error(`Your spreadsheet has no "${title}" tab.`);
   return tab.sheetId;
 }
@@ -436,8 +466,18 @@ export async function ensureMonthTab(spreadsheetId, isoDate) {
           formatColumn(1, { type: "NUMBER", pattern: "#,##0.00" }, sheetId),
           {
             repeatCell: {
-              range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 6, endColumnIndex: 7 },
-              cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } },
+              range: {
+                sheetId,
+                startRowIndex: 0,
+                endRowIndex: 1,
+                startColumnIndex: 6,
+                endColumnIndex: 7,
+              },
+              cell: {
+                userEnteredFormat: {
+                  numberFormat: { type: "NUMBER", pattern: "#,##0.00" },
+                },
+              },
               fields: "userEnteredFormat.numberFormat",
             },
           },
@@ -455,7 +495,9 @@ export async function ensureMonthTab(spreadsheetId, isoDate) {
         data: [
           {
             range: `'${title}'!A1`,
-            values: [["Date", "Amount", "Category", "Note", "", "Total", "=SUM(B2:B)"]],
+            values: [
+              ["Date", "Amount", "Category", "Note", "", "Total", "=SUM(B2:B)"],
+            ],
           },
           { range: `'${title}'!A2`, values: [[monthTabFormula(key)]] },
         ],

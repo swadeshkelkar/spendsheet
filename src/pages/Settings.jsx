@@ -2,9 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
 import LoadError from "../components/LoadError.jsx";
-import { getSpreadsheet, setFyStartMonth } from "../data/spreadsheet.js";
+import {
+  getSpreadsheet,
+  getYearFiles,
+  setFyStartMonth,
+} from "../data/spreadsheet.js";
 import { getSettings, updateSettings } from "../data/store.js";
 import { getSavedSession, onSessionEvent, signOut } from "../lib/auth.js";
+import { linkForAccount } from "../lib/google.js";
 import { CURRENCIES, currencySymbol } from "../lib/money.js";
 import { getThemeChoice, setThemeChoice } from "../lib/theme.js";
 import "./Settings.css";
@@ -39,13 +44,21 @@ function Settings() {
   const [sheet, setSheet] = useState(null);
   const [sheetError, setSheetError] = useState("");
   const [switchingYear, setSwitchingYear] = useState(false);
+  // All your yearly files, oldest first (see getYearFiles). null = loading.
+  const [files, setFiles] = useState(null);
 
   useEffect(() => {
     getSettings()
       .then(setSettings)
       .catch((problem) => setLoadError(problem.message));
+    // This year's file first (it may need creating), then the list of all
+    // files, so the list includes it.
     getSpreadsheet()
-      .then(setSheet)
+      .then((found) => {
+        setSheet(found);
+        return getYearFiles();
+      })
+      .then(setFiles)
       .catch((problem) => setSheetError(problem.message));
   }, [attempt]);
 
@@ -76,6 +89,7 @@ function Settings() {
     setSheetError("");
     try {
       setSheet(await setFyStartMonth(month)); // saves it, then finds or creates the file
+      setFiles(await getYearFiles()); // the list may have a new file now
     } catch (problem) {
       setSheetError(problem.message);
     }
@@ -137,7 +151,11 @@ function Settings() {
             </div>
 
             {/* A segmented control: one of three buttons is selected. */}
-            <div className="segmented" role="radiogroup" aria-labelledby="appearance-label">
+            <div
+              className="segmented"
+              role="radiogroup"
+              aria-labelledby="appearance-label"
+            >
               {THEME_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -155,13 +173,17 @@ function Settings() {
           <label className="setting setting-row">
             <div>
               <div className="setting-title">Currency</div>
-              <div className="setting-hint">Used for every amount in the app</div>
+              <div className="setting-hint">
+                Used for every amount in the app
+              </div>
             </div>
             {/* A plain <select>: phones show their own native picker for it. */}
             <select
               className="select"
               value={settings.currency}
-              onChange={(event) => changeSettings({ currency: event.target.value })}
+              onChange={(event) =>
+                changeSettings({ currency: event.target.value })
+              }
             >
               {CURRENCIES.map((currency) => (
                 <option key={currency.code} value={currency.code}>
@@ -172,10 +194,15 @@ function Settings() {
           </label>
 
           {/* The whole row is a link to the Categories screen. */}
-          <Link to="/settings/categories" className="setting setting-row setting-link">
+          <Link
+            to="/settings/categories"
+            className="setting setting-row setting-link"
+          >
             <div>
               <div className="setting-title">Categories</div>
-              <div className="setting-hint">Add or remove spending categories</div>
+              <div className="setting-hint">
+                Add or remove spending categories
+              </div>
             </div>
             <Icon name="forward" size={18} />
           </Link>
@@ -190,7 +217,11 @@ function Settings() {
               </div>
             </div>
 
-            <div className="segmented" role="radiogroup" aria-labelledby="fy-label">
+            <div
+              className="segmented"
+              role="radiogroup"
+              aria-labelledby="fy-label"
+            >
               {FY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -215,41 +246,87 @@ function Settings() {
       )}
 
       <section className="settings-group">
-        <h2 className="settings-heading">Account</h2>
+        <h2 className="settings-heading">Your files</h2>
 
         <div className="card settings-card">
-          <div className="setting setting-row">
-            <div>
-              <div className="setting-title">Your spreadsheet</div>
-              {sheetError ? (
-                <div className="setting-hint setting-error">{sheetError}</div>
-              ) : (
-                <div className="setting-hint">
-                  {sheet && !switchingYear ? sheet.name : "Finding your spreadsheet…"}
-                </div>
-              )}
+          {sheetError && (
+            <div className="setting">
+              <div className="setting-hint setting-error">{sheetError}</div>
             </div>
-            {/* Opens Google Sheets in a new tab. rel="noreferrer" stops that
-                tab from being able to control this one. */}
-            {sheet && (
+          )}
+
+          {!sheetError && (files === null || switchingYear) && (
+            <div className="setting">
+              <div className="setting-hint">Finding your files…</div>
+            </div>
+          )}
+
+          {/* One row per yearly file, newest first. [...files] makes a copy,
+              because reverse() would otherwise change the list in state. */}
+          {!sheetError &&
+            files !== null &&
+            !switchingYear &&
+            [...files].reverse().map((file) => (
+              <div key={file.id} className="setting setting-row">
+                <div>
+                  <div className="setting-title">{file.name}</div>
+                  {file.id === sheet?.id && (
+                    <div className="setting-hint">This year</div>
+                  )}
+                </div>
+                {/* target="_blank" opens a new tab. rel="noreferrer" stops that
+                    tab from being able to control this one. */}
+                <a
+                  href={linkForAccount(
+                    `https://docs.google.com/spreadsheets/d/${file.id}/edit`,
+                  )}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="outline-button"
+                >
+                  Open
+                </a>
+              </div>
+            ))}
+
+          {sheet && (
+            <div className="setting setting-row">
+              <div>
+                <div className="setting-title">Spendsheet folder</div>
+                <div className="setting-hint">
+                  All your files, in Google Drive
+                </div>
+              </div>
               <a
-                href={sheet.url}
+                href={linkForAccount(
+                  `https://drive.google.com/drive/folders/${sheet.folderId}`,
+                )}
                 target="_blank"
                 rel="noreferrer"
                 className="outline-button"
               >
                 Open
               </a>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
+      </section>
 
+      <section className="settings-group">
+        <h2 className="settings-heading">Account</h2>
+
+        <div className="card settings-card">
           <div className="setting setting-row">
             <div>
               <div className="setting-title">Google account</div>
               {/* Saved session: the email still shows while the sign-in is expired. */}
               <div className="setting-hint">{getSavedSession()?.email}</div>
             </div>
-            <button type="button" className="signout-button" onClick={handleSignOut}>
+            <button
+              type="button"
+              className="signout-button"
+              onClick={handleSignOut}
+            >
               Sign out
             </button>
           </div>
