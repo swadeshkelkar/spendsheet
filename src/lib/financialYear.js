@@ -22,8 +22,6 @@ sheetFileName can be one line that uses getFinancialYear.
 // 2026-10-31", 4 -> FY 2026-27
 export function getFinancialYear(isoDate, startMonth) {
   // Delete this line and write your code.
-  //console.log(isoDate, startMonth);
-
   const [year, month] = isoDate.split("-").map(Number);
   if (startMonth === 1) {
     return `${year}`;
@@ -33,13 +31,11 @@ export function getFinancialYear(isoDate, startMonth) {
       startYear = year - 1;
       // const secondEntry = year.toString();
       // const result = secondEntry.slice(-2);
-      // // console.log(result);
       // return `FY ${year - 1}-${result}`;
     } else {
       startYear = year;
       // const secondEntry = (year + 1).toString();
       // const result = secondEntry.slice(-2);
-      // // console.log(result);
       // return `FY ${year}-${result}`;
     }
     const result = (startYear + 1).toString().slice(-2);

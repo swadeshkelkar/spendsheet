@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Installing the app ("Add to Home Screen"): name, icons, how it opens.
+         Vite adds /spendsheet/ in front of these paths when building. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Spendsheet" />
+    <!-- The colour of the phone's status bar: the page background, so the
+         app runs edge to edge. Two versions, for light and dark mode. -->
+    <meta name="theme-color" content="#f6f7f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1513" media="(prefers-color-scheme: dark)" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spendsheet</title>
     <meta

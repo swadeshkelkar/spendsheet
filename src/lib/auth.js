@@ -108,10 +108,8 @@ export function signIn() {
 
       // Called when the user finishes in the popup.
       callback: async (response) => {
-        console.log(response);
         if (response.error) {
           reject(new Error("Sign-in didn't work. Please try again."));
-          console.log(new Error("Sign-in didn't work. Please try again."));
           return;
         }
 
