@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Icon from "../components/Icon.jsx";
+import LegalLinks from "../components/LegalLinks.jsx";
 import LoadError from "../components/LoadError.jsx";
 import {
   getSpreadsheet,
@@ -332,6 +333,8 @@ function Settings() {
           </div>
         </div>
       </section>
+
+      <LegalLinks />
     </div>
   );
 }

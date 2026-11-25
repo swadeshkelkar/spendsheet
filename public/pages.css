@@ -1,0 +1,100 @@
+/* Styles for the plain pages (about, privacy, terms). They don't load the
+   app, so this is a small stand-alone copy of its look, light and dark. */
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --border: #dde3e0;
+  --text: #16201c;
+  --text-2: #4f5a55;
+  --accent: #0f6e5c;
+  --on-accent: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1513;
+    --surface: #18201d;
+    --border: #2a3430;
+    --text: #e8eeeb;
+    --text-2: #9aa8a2;
+    --accent: #4fc3a7;
+    --on-accent: #0f1513;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  line-height: 1.2;
+}
+
+h2 {
+  margin: 36px 0 8px;
+  font-size: 21px;
+}
+
+a {
+  color: var(--accent);
+}
+
+.lead {
+  font-size: 19px;
+  color: var(--text-2);
+}
+
+.muted {
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.card {
+  margin: 24px 0;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.button {
+  display: inline-block;
+  margin: 8px 0 4px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+  font-weight: 600;
+}
+
+footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}

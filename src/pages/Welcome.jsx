@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import LegalLinks from "../components/LegalLinks.jsx";
 import { getSpreadsheet } from "../data/spreadsheet.js";
 import { getSession, loadGoogleLibrary, signIn } from "../lib/auth.js";
 import "./Welcome.css";
@@ -79,6 +80,8 @@ function Welcome() {
             {error}
           </p>
         )}
+
+        <LegalLinks />
       </div>
     </div>
   );
